@@ -4,8 +4,8 @@ import {Emoji} from "../../utils/emojiCharacters";
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("skip")
-    .setDescription("Skip song"),
+    .setName("resume")
+    .setDescription("Resume the playback"),
   async execute(interaction: ChatInputCommandInteraction) {
     await interaction.deferReply();
 
@@ -17,21 +17,7 @@ module.exports = {
 
     // @ts-ignore -- songQueue is a valid property
     const queue = interaction.client.songQueue;
-    try {
-      await queue.next();
-
-      const song = queue.currentSong;
-      if (song) {
-        return interaction.followUp({content: `Added ${song.title} ${Emoji.notes}`});
-      } else {
-        return interaction.followUp({content: `Queue ended ${Emoji.stop_button}`});
-      }
-    } catch (reject) {
-      console.error(reject);
-      return interaction.followUp({
-        content: "Failed to skip song.",
-        ephemeral: true,
-      });
-    }
+    queue.resume();
+    return interaction.followUp({content: `Resumed playback ${Emoji.arrow_forward}`});
   },
 };

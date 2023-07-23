@@ -14,11 +14,16 @@ import Song from "./song.js";
 export class Queue {
   private songs: Song[];
   private player: AudioPlayer;
+  private autoPlay: boolean;
+  private relatedSong: string | undefined;
   public currentSong: Song | undefined;
 
   constructor() {
     this.songs = [];
     this.player = createAudioPlayer();
+    this.autoPlay = false;
+    this.relatedSong = undefined;
+
     this.currentSong = undefined;
 
     this.player.on(AudioPlayerStatus.Idle, async () => {
@@ -51,7 +56,18 @@ export class Queue {
     if (!this.currentSong) {
       // end of queue
       this.player.stop();
+      if (this.autoPlay) {
+        if (this.relatedSong) {
+          await this.add(this.relatedSong).catch(console.error);
+          await this.process().catch(console.error);
+        } else {
+          console.error("Tried to autoplay but there is no related song");
+        }
+      }
       return;
+    } else {
+      // save related song for autoplay
+      this.relatedSong = this.currentSong.relatedUrl;
     }
 
     let songStream = await stream(this.currentSong.url).catch(Promise.reject);
@@ -76,6 +92,14 @@ export class Queue {
     await this.process().catch(console.error);
   }
 
+  autoplay() {
+    this.autoPlay = true;
+  }
+
+  stopAutoplay() {
+    this.autoPlay = false;
+  }
+
   resume() {
     this.player.unpause();
   }
@@ -84,9 +108,10 @@ export class Queue {
     this.player.pause();
   }
 
-  clear() {
+  stop() {
     this.songs = [];
     this.currentSong = undefined;
+    this.relatedSong = undefined;
     this.player.stop();
   }
 }

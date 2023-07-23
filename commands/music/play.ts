@@ -1,5 +1,6 @@
 import {ChatInputCommandInteraction, SlashCommandBuilder} from "discord.js";
 import {soundCommandGuard, user2VoiceChannel} from "../../utils/soundCommandGuard";
+import {Emoji} from "../../utils/emojiCharacters";
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -38,9 +39,7 @@ module.exports = {
       await queue.process();
       await queue.join(channel);
 
-      return interaction.followUp({
-        content: `Added ${song.author} — ${song.title}`,
-      });
+      return interaction.followUp({content: `Added ${song.title} ${Emoji.notes}`});
     } catch (reject) {
       console.error(reject);
       return interaction.followUp({
