@@ -46,6 +46,15 @@ export class Queue {
     }
   }
 
+  private async playResource(url: string, seek? : number) {
+    let songStream = await stream(url, {seek: seek}).catch(Promise.reject);
+    const resource = createAudioResource(songStream.stream, {
+      inputType: StreamType.Opus,
+    });
+
+    this.player.play(resource);
+  }
+
   async process() {
     if (this.currentSong) {
       // already playing song
@@ -70,12 +79,7 @@ export class Queue {
       this.relatedSong = this.currentSong.relatedUrl;
     }
 
-    let songStream = await stream(this.currentSong.url).catch(Promise.reject);
-    const resource = createAudioResource(songStream.stream, {
-      inputType: StreamType.Opus,
-    });
-
-    this.player.play(resource);
+    this.playResource(this.currentSong.url).catch(Promise.reject);
   }
 
   join(channel: VoiceChannel) {
@@ -85,6 +89,16 @@ export class Queue {
       adapterCreator: channel.guild.voiceAdapterCreator,
     });
     connection.subscribe(this.player);
+  }
+
+  async seek(seconds: number) {
+    if (!this.currentSong) {
+      return Promise.reject("No song is playing");
+    } else if (this.currentSong.duration <= seconds) {
+      return Promise.reject("Seeking past song duration");
+    }
+
+    this.playResource(this.currentSong.url, seconds).catch(Promise.reject);
   }
 
   async next() {

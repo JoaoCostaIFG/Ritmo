@@ -1,16 +1,15 @@
 import {ChatInputCommandInteraction, SlashCommandBuilder} from "discord.js";
 import {soundCommandGuard, user2VoiceChannel} from "../../utils/soundCommandGuard";
 import {Emoji} from "../../utils/emojiCharacters";
-import {addSongEmbed} from "../../embeds/addSongEmbed";
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("play")
-    .setDescription("Plays song")
+    .setName("seek")
+    .setDescription("Seeks to a point in a song")
     .addStringOption((option) =>
       option
-        .setName("song")
-        .setDescription("The song to play")
+        .setName("seek-point")
+        .setDescription("The poing to seek to")
         .setRequired(true),
     ),
   async execute(interaction: ChatInputCommandInteraction, input: string) {
@@ -22,30 +21,42 @@ module.exports = {
       return err;
     }
 
-    const songName = interaction.options.getString("song") || input;
-    if (!songName) {
+    const seekPointStr = interaction.options.getString("seek-point") || input;
+    if (!seekPointStr) {
       return interaction
         .followUp({
-          content: "You're missing the song argument.",
+          content: "You're missing the seek-point argument.",
           ephemeral: true,
         })
         .catch(console.error);
     }
 
+    const seekComponents = seekPointStr.split(":");
+    if (seekComponents.length > 3 || seekComponents.length === 0) {
+      return interaction
+        .followUp({
+          content: "Seek point is invalid. Try something like 120, 2:0, or 0:2:0",
+          ephemeral: true,
+        })
+        .catch(console.error);
+    }
+
+    let seekPoint = 0;
+    for (let i = 0; i < seekComponents.length; ++i) {
+      seekPoint *= 60;
+      seekPoint += parseInt(seekComponents[i]);
+    }
 
     // @ts-ignore -- songQueue is a valid property
     const queue = interaction.client.songQueue;
     try {
-      const song = await queue.add(songName);
-      await queue.process();
-      await queue.join(channel);
+      await queue.seek(seekPoint);
 
-      await interaction.followUp({content: `Added ${song.title} ${Emoji.notes}`});
-      return interaction.channel?.send({embeds: [addSongEmbed(song)]});
+      return interaction.followUp({content: `Seeked to ${seekPoint} in ${queue.currentSong.title} ${Emoji.mag}`});
     } catch (reject) {
       console.error(reject);
       return interaction.followUp({
-        content: "Failed to play song.",
+        content: "Failed to seek to the point in the song.",
         ephemeral: true,
       });
     }

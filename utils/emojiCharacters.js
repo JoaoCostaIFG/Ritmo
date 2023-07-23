@@ -21,4 +21,5 @@ export const Emoji = {
 	'loud_sound': '🔊', 'loudspeaker': '📢', 'mega': '📣',
 	'bell': '🔔', 'no_bell': '🔕', 'cross': '❌',
 	'music': '🎵', 'musical_note': '🎵', 'notes': '🎶',
+	'mag': '🔍', 'mag_right': '🔎',
 };

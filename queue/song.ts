@@ -6,6 +6,7 @@ interface SongArgs {
   duration: number;
   url: string;
   relatedUrl: string;
+  thumbnail: string;
 }
 
 export default class Song {
@@ -14,13 +15,15 @@ export default class Song {
   public readonly duration: number;
   public readonly url: string;
   public readonly relatedUrl: string;
+  public readonly thumbnail: string;
 
-  constructor({title, author, duration, url, relatedUrl}: SongArgs) {
+  constructor({title, author, duration, url, relatedUrl, thumbnail}: SongArgs) {
     this.title = title;
     this.author = author;
     this.duration = duration; // in seconds
     this.url = url;
     this.relatedUrl = relatedUrl; // for autoplay
+    this.thumbnail = thumbnail;
   }
 
   static async fromUrl(url: string) {
@@ -36,6 +39,7 @@ export default class Song {
         duration: songInfo.video_details.durationInSec,
         url: songInfo.video_details.url,
         relatedUrl: songInfo.related_videos[0],
+        thumbnail: songInfo.video_details.thumbnails[0].url,
       }),
     );
   }
@@ -59,6 +63,7 @@ export default class Song {
         duration: songInfo.video_details.durationInSec,
         url: songInfo.video_details.url,
         relatedUrl: songInfo.related_videos[0],
+        thumbnail: songInfo.video_details.thumbnails[0].url,
       }),
     );
   }
