@@ -1,25 +1,41 @@
-const {
+import {VoiceChannel} from "discord.js";
+import {
   createAudioPlayer,
   createAudioResource,
   StreamType,
   joinVoiceChannel,
-} = require("@discordjs/voice");
-const { stream, yt_validate } = require("play-dl");
+  AudioPlayer,
+  AudioPlayerStatus,
+} from "@discordjs/voice";
+import {stream, yt_validate} from "play-dl";
 
-const Song = require("./song");
+import Song from "./song.js";
 
-class Queue {
+export class Queue {
+  private songs: Song[];
+  private player: AudioPlayer;
+  public currentSong: Song | undefined;
+
   constructor() {
     this.songs = [];
-    this.currentSong = null;
     this.player = createAudioPlayer();
+    this.currentSong = undefined;
+
+    this.player.on(AudioPlayerStatus.Idle, async () => {
+      await this.next().catch(console.error);
+    });
+
+    this.player.on('error', error => {
+      console.error(error);
+    });
   }
 
-  async add(arg) {
+  async add(arg: string) {
     const isUrl = arg.startsWith("https") && yt_validate(arg) !== "search";
     try {
       const song = isUrl ? await Song.fromUrl(arg) : await Song.fromQuery(arg);
       this.songs.push(song);
+      return Promise.resolve(song);
     } catch (reject) {
       return Promise.reject(reject);
     }
@@ -34,6 +50,7 @@ class Queue {
     this.currentSong = this.songs.shift();
     if (!this.currentSong) {
       // end of queue
+      this.player.stop();
       return;
     }
 
@@ -45,7 +62,7 @@ class Queue {
     this.player.play(resource);
   }
 
-  join(channel) {
+  join(channel: VoiceChannel) {
     const connection = joinVoiceChannel({
       channelId: channel.id,
       guildId: channel.guild.id,
@@ -54,14 +71,22 @@ class Queue {
     connection.subscribe(this.player);
   }
 
+  async next() {
+    this.currentSong = undefined;
+    await this.process().catch(console.error);
+  }
+
+  resume() {
+    this.player.unpause();
+  }
+
   pause() {
     this.player.pause();
   }
 
   clear() {
-    this.songs.clear();
-    this.currentSong = null;
+    this.songs = [];
+    this.currentSong = undefined;
+    this.player.stop();
   }
 }
-
-module.exports = Queue;

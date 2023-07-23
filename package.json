@@ -2,11 +2,11 @@
   "name": "musicbot",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "index.cjs",
   "scripts": {
-    "start": "node .",
-    "deploy": "node deploy-commands",
-    "deploy-global": "node deploy-commands-global",
+    "start": "tsc && node dist/index.cjs",
+    "deploy": "tsc && node dist/deploy-commands.cjs",
+    "deploy-global": "tsc && node dist/deploy-commands-global.cjs",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
@@ -19,5 +19,8 @@
     "libsodium-wrappers": "^0.7.11",
     "play-dl": "^1.9.6",
     "sodium": "^3.0.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.1.6"
   }
 }

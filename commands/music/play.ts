@@ -1,4 +1,5 @@
-const { SlashCommandBuilder } = require("discord.js");
+import {ChatInputCommandInteraction, SlashCommandBuilder} from "discord.js";
+import {soundCommandGuard, user2VoiceChannel} from "../../utils/soundCommandGuard";
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -10,36 +11,36 @@ module.exports = {
         .setDescription("The song to play")
         .setRequired(true),
     ),
-  async execute(interaction, input) {
-    const guildMember = interaction.member;
-    const channel = guildMember.voice.channel;
+  async execute(interaction: ChatInputCommandInteraction, input: string) {
+    await interaction.deferReply();
 
-    if (!channel) {
-      return interaction
-        .reply({
-          content: "You must be in a voice channel to use this command.",
-          ephemeral: true,
-        })
-        .catch(console.error);
+    const channel = user2VoiceChannel(interaction, interaction.member!.user.id!);
+    const err = soundCommandGuard(interaction, channel);
+    if (err) {
+      return err;
     }
 
     const songName = interaction.options.getString("song") || input;
     if (!songName) {
       return interaction
-        .reply({
+        .followUp({
           content: "You're missing the song argument.",
           ephemeral: true,
         })
         .catch(console.error);
     }
 
-    await interaction.deferReply();
 
+    // @ts-ignore -- songQueue is a valid property
     const queue = interaction.client.songQueue;
     try {
-      await queue.add(songName);
+      const song = await queue.add(songName);
       await queue.process();
       await queue.join(channel);
+
+      return interaction.followUp({
+        content: `Added ${song.author} — ${song.title}`,
+      });
     } catch (reject) {
       console.error(reject);
       return interaction.followUp({
@@ -47,9 +48,5 @@ module.exports = {
         ephemeral: true,
       });
     }
-
-    await interaction.followUp({
-      content: `Playing ${queue.currentSong.author} — ${queue.currentSong.title}`,
-    });
   },
 };

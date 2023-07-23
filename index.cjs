@@ -1,4 +1,4 @@
-const { token } = require("./config.json");
+require("dotenv").config();
 
 const fs = require("node:fs");
 const path = require("node:path");
@@ -6,7 +6,7 @@ const path = require("node:path");
 const { Client, Collection, GatewayIntentBits } = require("discord.js");
 const { generateDependencyReport } = require("@discordjs/voice");
 
-const Queue = require("./queue/queue");
+const { Queue } = require("./queue/queue.js");
 
 function collectCommands() {
   let commands = new Collection();
@@ -18,7 +18,7 @@ function collectCommands() {
     const commandsPath = path.join(foldersPath, folder);
     const commandFiles = fs
       .readdirSync(commandsPath)
-      .filter((file) => file.endsWith(".ts"));
+      .filter((file) => file.endsWith(".js"));
     for (const file of commandFiles) {
       const filePath = path.join(commandsPath, file);
       const command = require(filePath);
@@ -38,7 +38,7 @@ function collectCommands() {
   return commands;
 }
 
-function registerEvents() {
+async function registerEvents(client) {
   const eventsPath = path.join(__dirname, "events");
   const eventFiles = fs
     .readdirSync(eventsPath)
@@ -46,7 +46,7 @@ function registerEvents() {
 
   for (const file of eventFiles) {
     const filePath = path.join(eventsPath, file);
-    const event = require(filePath);
+    const event = await import(filePath);
     if (event.once) {
       client.once(event.name, (...args) => event.execute(...args));
     } else {
@@ -66,9 +66,7 @@ const client = new Client({
   ],
 });
 client.commands = collectCommands();
-registerEvents();
+registerEvents(client);
 client.songQueue = new Queue();
 
-client.login(token);
-
-//main();
+client.login(process.env.TOKEN);
