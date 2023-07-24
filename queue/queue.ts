@@ -14,14 +14,16 @@ import Song from "./song.js";
 export class Queue {
   private songs: Song[];
   private player: AudioPlayer;
-  private autoPlay: boolean;
+  private doAutoplay: boolean;
+  private doLoop: boolean;
   private relatedSong: string | undefined;
   public currentSong: Song | undefined;
 
   constructor() {
     this.songs = [];
     this.player = createAudioPlayer();
-    this.autoPlay = false;
+    this.doAutoplay = false;
+    this.doLoop = false;
     this.relatedSong = undefined;
 
     this.currentSong = undefined;
@@ -46,7 +48,7 @@ export class Queue {
     }
   }
 
-  private async playResource(url: string, seek? : number) {
+  private async playResource(url: string, seek?: number) {
     let songStream = await stream(url, {seek: seek}).catch(Promise.reject);
     const resource = createAudioResource(songStream.stream, {
       inputType: StreamType.Opus,
@@ -65,7 +67,7 @@ export class Queue {
     if (!this.currentSong) {
       // end of queue
       this.player.stop();
-      if (this.autoPlay) {
+      if (this.doAutoplay) {
         if (this.relatedSong) {
           await this.add(this.relatedSong).catch(console.error);
           await this.process().catch(console.error);
@@ -102,16 +104,34 @@ export class Queue {
   }
 
   async next() {
-    this.currentSong = undefined;
+    if (!this.doLoop) {
+      this.currentSong = undefined;
+    }
     await this.process().catch(console.error);
   }
 
+  async skip() {
+    if (this.doLoop) {
+      // force a skip
+      this.currentSong = undefined;
+    }
+    return this.next();
+  }
+
   autoplay() {
-    this.autoPlay = true;
+    this.doAutoplay = true;
   }
 
   stopAutoplay() {
-    this.autoPlay = false;
+    this.doAutoplay = false;
+  }
+
+  loop() {
+    this.doLoop = true;
+  }
+
+  stopLoop() {
+    this.doLoop = false;
   }
 
   resume() {
