@@ -1,29 +1,20 @@
-import {ChatInputCommandInteraction, VoiceBasedChannel} from "discord.js";
+import { ChatInputCommandInteraction, VoiceBasedChannel } from "discord.js";
 
-export function user2VoiceChannel(interaction: ChatInputCommandInteraction, userId: string) {
+function user2VoiceChannel(interaction: ChatInputCommandInteraction, userId: string): VoiceBasedChannel | null {
   const channel = interaction.guild!.members.cache.get(userId)!.voice.channel;
   return channel;
 }
 
-export function soundCommandGuard(interaction: ChatInputCommandInteraction, channel: VoiceBasedChannel | null) {
+export function soundCommandGuard(interaction: ChatInputCommandInteraction): VoiceBasedChannel {
+  const channel = user2VoiceChannel(interaction, interaction.member!.user.id!);
   if (!channel) {
-    return interaction
-      .followUp({
-        content: "You must be in a voice channel to use this command.",
-        ephemeral: true,
-      })
-      .catch(console.error);
+    throw new Error("You must be in a voice channel to use this command.");
   }
 
   const botChannel = user2VoiceChannel(interaction, interaction.client.user.id);
   if (botChannel && botChannel.id !== channel.id) {
-    return interaction
-      .followUp({
-        content: "You must be on the same channel as the bot to issue sound commands.",
-        ephemeral: true,
-      })
-      .catch(console.error);
+    throw new Error("You must be on the same channel as the bot to issue sound commands.");
   }
 
-  return null;
+  return channel;
 }

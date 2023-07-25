@@ -1,5 +1,5 @@
 import {ChatInputCommandInteraction, SlashCommandBuilder} from "discord.js";
-import {soundCommandGuard, user2VoiceChannel} from "../../utils/soundCommandGuard";
+import {soundCommandGuard} from "../../utils/soundCommandGuard";
 import {Emoji} from "../../utils/emojiCharacters";
 
 module.exports = {
@@ -9,10 +9,10 @@ module.exports = {
   async execute(interaction: ChatInputCommandInteraction) {
     await interaction.deferReply();
 
-    const channel = user2VoiceChannel(interaction, interaction.member!.user.id!);
-    const err = soundCommandGuard(interaction, channel);
-    if (err) {
-      return err;
+    try {
+      soundCommandGuard(interaction);
+    } catch (err: any) {
+      return interaction.followUp({ content: err.message, ephemeral: true });
     }
 
     // @ts-ignore -- songQueue is a valid property

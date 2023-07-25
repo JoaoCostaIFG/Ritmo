@@ -1,6 +1,6 @@
-import {ChatInputCommandInteraction, SlashCommandBuilder} from "discord.js";
-import {soundCommandGuard, user2VoiceChannel} from "../../utils/soundCommandGuard";
-import {Emoji} from "../../utils/emojiCharacters";
+import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
+import { soundCommandGuard } from "../../utils/soundCommandGuard";
+import { Emoji } from "../../utils/emojiCharacters";
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -15,10 +15,10 @@ module.exports = {
   async execute(interaction: ChatInputCommandInteraction, input: string) {
     await interaction.deferReply();
 
-    const channel = user2VoiceChannel(interaction, interaction.member!.user.id!);
-    const err = soundCommandGuard(interaction, channel);
-    if (err) {
-      return err;
+    try {
+      soundCommandGuard(interaction);
+    } catch (err: any) {
+      return interaction.followUp({ content: err.message, ephemeral: true });
     }
 
     const seekPointStr = interaction.options.getString("seek-point") || input;
@@ -27,8 +27,7 @@ module.exports = {
         .followUp({
           content: "You're missing the seek-point argument.",
           ephemeral: true,
-        })
-        .catch(console.error);
+        });
     }
 
     const seekComponents = seekPointStr.split(":");
@@ -37,8 +36,7 @@ module.exports = {
         .followUp({
           content: "Seek point is invalid. Try something like 120, 2:0, or 0:2:0",
           ephemeral: true,
-        })
-        .catch(console.error);
+        });
     }
 
     let seekPoint = 0;
@@ -51,10 +49,9 @@ module.exports = {
     const queue = interaction.client.songQueue;
     try {
       await queue.seek(seekPoint);
-
-      return interaction.followUp({content: `Seeked to ${seekPoint} in ${queue.currentSong.title} ${Emoji.mag}`});
-    } catch (reject) {
-      console.error(reject);
+      return interaction.followUp({ content: `Seeked to ${seekPoint} in ${queue.currentSong.title} ${Emoji.mag}` });
+    } catch (error: any) {
+      console.error(`Failure while seeking to ${seekPoint} in ${queue.currentSong.title}: [error=${error}]`);
       return interaction.followUp({
         content: "Failed to seek to the point in the song.",
         ephemeral: true,

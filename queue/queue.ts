@@ -1,4 +1,4 @@
-import {VoiceChannel} from "discord.js";
+import { VoiceChannel } from "discord.js";
 import {
   createAudioPlayer,
   createAudioResource,
@@ -7,7 +7,7 @@ import {
   AudioPlayer,
   AudioPlayerStatus,
 } from "@discordjs/voice";
-import {stream, yt_validate} from "play-dl";
+import { stream, yt_validate } from "play-dl";
 
 import Song from "./song.js";
 
@@ -29,27 +29,29 @@ export class Queue {
     this.currentSong = undefined;
 
     this.player.on(AudioPlayerStatus.Idle, async () => {
-      await this.next().catch(console.error);
+      try {
+        await this.next();
+      } catch (error) {
+        console.error(`The player is idle and we got an error while getting to the next song: [error=${error}]`);
+      }
     });
 
     this.player.on('error', error => {
-      console.error(error);
+      console.error(`The player found an error: [error=${error}]`);
     });
   }
 
-  async add(arg: string) {
+  async add(arg: string): Promise<Song> {
     const isUrl = arg.startsWith("https") && yt_validate(arg) !== "search";
-    try {
-      const song = isUrl ? await Song.fromUrl(arg) : await Song.fromQuery(arg);
-      this.songs.push(song);
-      return Promise.resolve(song);
-    } catch (reject) {
-      return Promise.reject(reject);
-    }
+
+    const song = isUrl ? await Song.fromUrl(arg) : await Song.fromQuery(arg);
+    this.songs.push(song);
+
+    return song;
   }
 
-  private async playResource(url: string, seek?: number) {
-    let songStream = await stream(url, {seek: seek}).catch(Promise.reject);
+  private async playResource(url: string, seek?: number): Promise<void> {
+    let songStream = await stream(url, { seek: seek });
     const resource = createAudioResource(songStream.stream, {
       inputType: StreamType.Opus,
     });
@@ -57,7 +59,7 @@ export class Queue {
     this.player.play(resource);
   }
 
-  async process() {
+  async process(): Promise<void> {
     if (this.currentSong) {
       // already playing song
       return;
@@ -69,8 +71,8 @@ export class Queue {
       this.player.stop();
       if (this.doAutoplay) {
         if (this.relatedSong) {
-          await this.add(this.relatedSong).catch(console.error);
-          await this.process().catch(console.error);
+          await this.add(this.relatedSong);
+          await this.process();
         } else {
           console.error("Tried to autoplay but there is no related song");
         }
@@ -81,10 +83,10 @@ export class Queue {
       this.relatedSong = this.currentSong.relatedUrl;
     }
 
-    this.playResource(this.currentSong.url).catch(Promise.reject);
+    this.playResource(this.currentSong.url);
   }
 
-  join(channel: VoiceChannel) {
+  join(channel: VoiceChannel): void {
     const connection = joinVoiceChannel({
       channelId: channel.id,
       guildId: channel.guild.id,
@@ -93,24 +95,24 @@ export class Queue {
     connection.subscribe(this.player);
   }
 
-  async seek(seconds: number) {
+  async seek(seconds: number): Promise<void> {
     if (!this.currentSong) {
-      return Promise.reject("No song is playing");
+      throw new Error("No song is playing");
     } else if (this.currentSong.duration <= seconds) {
-      return Promise.reject("Seeking past song duration");
+      throw new Error("Seeking past song duration");
     }
 
-    this.playResource(this.currentSong.url, seconds).catch(Promise.reject);
+    this.playResource(this.currentSong.url, seconds);
   }
 
-  async next() {
+  async next(): Promise<void> {
     if (!this.doLoop) {
       this.currentSong = undefined;
     }
-    await this.process().catch(console.error);
+    await this.process();
   }
 
-  async skip() {
+  async skip(): Promise<void> {
     if (this.doLoop) {
       // force a skip
       this.currentSong = undefined;
@@ -118,31 +120,31 @@ export class Queue {
     return this.next();
   }
 
-  autoplay() {
+  autoplay(): void {
     this.doAutoplay = true;
   }
 
-  stopAutoplay() {
+  stopAutoplay(): void {
     this.doAutoplay = false;
   }
 
-  loop() {
+  loop(): void {
     this.doLoop = true;
   }
 
-  stopLoop() {
+  stopLoop(): void {
     this.doLoop = false;
   }
 
-  resume() {
+  resume(): void {
     this.player.unpause();
   }
 
-  pause() {
+  pause(): void {
     this.player.pause();
   }
 
-  stop() {
+  stop(): void {
     this.songs = [];
     this.currentSong = undefined;
     this.relatedSong = undefined;

@@ -1,7 +1,7 @@
-import {ChatInputCommandInteraction, SlashCommandBuilder} from "discord.js";
-import {soundCommandGuard, user2VoiceChannel} from "../../utils/soundCommandGuard";
-import {Emoji} from "../../utils/emojiCharacters";
-import {addSongEmbed} from "../../embeds/addSongEmbed";
+import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
+import { soundCommandGuard } from "../../utils/soundCommandGuard";
+import { Emoji } from "../../utils/emojiCharacters";
+import { addSongEmbed } from "../../embeds/addSongEmbed";
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -16,10 +16,11 @@ module.exports = {
   async execute(interaction: ChatInputCommandInteraction, input: string) {
     await interaction.deferReply();
 
-    const channel = user2VoiceChannel(interaction, interaction.member!.user.id!);
-    const err = soundCommandGuard(interaction, channel);
-    if (err) {
-      return err;
+    let channel;
+    try {
+      channel = soundCommandGuard(interaction);
+    } catch (err: any) {
+      return interaction.followUp({ content: err.message, ephemeral: true });
     }
 
     const songName = interaction.options.getString("song") || input;
@@ -28,10 +29,8 @@ module.exports = {
         .followUp({
           content: "You're missing the song argument.",
           ephemeral: true,
-        })
-        .catch(console.error);
+        });
     }
-
 
     // @ts-ignore -- songQueue is a valid property
     const queue = interaction.client.songQueue;
@@ -40,10 +39,10 @@ module.exports = {
       await queue.process();
       await queue.join(channel);
 
-      await interaction.followUp({content: `Added ${song.title} ${Emoji.notes}`});
-      return interaction.channel?.send({embeds: [addSongEmbed(song)]});
-    } catch (reject) {
-      console.error(reject);
+      await interaction.followUp({ content: `Added ${song.title} ${Emoji.notes}` });
+      return interaction.channel?.send({ embeds: [addSongEmbed(song)] });
+    } catch (error) {
+      console.error(`Failure while adding song: [error=${error}]`);
       return interaction.followUp({
         content: "Failed to play song.",
         ephemeral: true,
