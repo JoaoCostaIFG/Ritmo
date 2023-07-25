@@ -4,8 +4,8 @@ import { Emoji } from "../../utils/emojiCharacters";
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("stop")
-    .setDescription("Stop playing and clean queue"),
+    .setName("clear")
+    .setDescription("Clear queue"),
   async execute(interaction: ChatInputCommandInteraction) {
     await interaction.deferReply();
 
@@ -18,6 +18,6 @@ module.exports = {
     // @ts-ignore -- songQueue is a valid property
     const queue = interaction.client.songQueue;
     queue.stop();
-    return interaction.followUp({ content: `Stopped and cleared queue ${Emoji.forbidden}` });
+    return interaction.followUp({ content: `Cleared queue ${Emoji.trash}` });
   },
 };

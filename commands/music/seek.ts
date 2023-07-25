@@ -49,9 +49,9 @@ module.exports = {
     const queue = interaction.client.songQueue;
     try {
       await queue.seek(seekPoint);
-      return interaction.followUp({ content: `Seeked to ${seekPoint} in ${queue.currentSong.title} ${Emoji.mag}` });
+      return interaction.followUp({ content: `Seeked to ${seekPoint} in ${queue.getCurrentSong().title} ${Emoji.mag}` });
     } catch (error: any) {
-      console.error(`Failure while seeking to ${seekPoint} in ${queue.currentSong.title}: [error=${error}]`);
+      console.error(`Failure while seeking to ${seekPoint} in ${queue.getCurrentSong().title}: [error=${error}]`);
       return interaction.followUp({
         content: "Failed to seek to the point in the song.",
         ephemeral: true,
