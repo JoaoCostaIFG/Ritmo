@@ -1,6 +1,7 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
 import { soundCommandGuard } from "../../utils/soundCommandGuard";
 import { Emoji } from "../../utils/emojiCharacters";
+import { Queue } from "../../queue/queue";
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -16,7 +17,7 @@ module.exports = {
     }
 
     // @ts-ignore -- songQueue is a valid property
-    const queue = interaction.client.songQueue;
+    const queue: Queue = interaction.client.songQueue;
     queue.autoplay();
     return interaction.followUp({ content: `Autoplay enabled ${Emoji.infinity}` });
   },

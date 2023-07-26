@@ -20,6 +20,7 @@ for (const folder of commandFolders) {
     const filePath = path.join(commandsPath, file);
     const command = require(filePath);
     if ("data" in command && "execute" in command) {
+      // console.log(command.data.name + "-" + filePath)
       commands.push(command.data.toJSON());
     } else {
       console.log(

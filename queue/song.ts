@@ -1,6 +1,7 @@
 import { video_basic_info, yt_validate, search } from "play-dl";
+import { secs2TimeStr } from "../utils/time";
 
-interface SongArgs {
+export interface SongArgs {
   title: string;
   author: string;
   duration: number;
@@ -24,6 +25,10 @@ export default class Song {
     this.url = url;
     this.relatedUrl = relatedUrl; // for autoplay
     this.thumbnail = thumbnail;
+  }
+
+  public durationStr(): string {
+    return secs2TimeStr(this.duration);
   }
 
   static async fromUrl(url: string): Promise<Song> {

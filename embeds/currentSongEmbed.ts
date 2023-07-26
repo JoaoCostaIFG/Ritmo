@@ -1,13 +1,19 @@
 import { EmbedBuilder } from 'discord.js';
-import Song from '../queue/song';
+import { Queue } from '../queue/queue';
+import { Emoji } from '../utils/emojiCharacters';
 
-export function addSongEmbed(song: Song) {
+export function currentSongEmbed(queue: Queue) {
+  const song = queue.getCurrentSong();
+
   return new EmbedBuilder()
     .setColor(0x0099FF)
     .setTitle(song.title)
     .setURL(song.url)
     .setDescription(`by ${song.author}`)
-    .setThumbnail(song.thumbnail);
+    .setThumbnail(song.thumbnail)
+    .setFooter({
+      text: `${song.timeStr()}/${song.durationStr()} ${Emoji.clock4}`
+    });
 }
 
 

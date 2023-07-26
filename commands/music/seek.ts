@@ -1,6 +1,8 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
 import { soundCommandGuard } from "../../utils/soundCommandGuard";
 import { Emoji } from "../../utils/emojiCharacters";
+import { timeStr2Secs } from "../../utils/time";
+import { Queue } from "../../queue/queue";
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -29,24 +31,10 @@ module.exports = {
           ephemeral: true,
         });
     }
-
-    const seekComponents = seekPointStr.split(":");
-    if (seekComponents.length > 3 || seekComponents.length === 0) {
-      return interaction
-        .followUp({
-          content: "Seek point is invalid. Try something like 120, 2:0, or 0:2:0",
-          ephemeral: true,
-        });
-    }
-
-    let seekPoint = 0;
-    for (let i = 0; i < seekComponents.length; ++i) {
-      seekPoint *= 60;
-      seekPoint += parseInt(seekComponents[i]);
-    }
+    const seekPoint = timeStr2Secs(seekPointStr);
 
     // @ts-ignore -- songQueue is a valid property
-    const queue = interaction.client.songQueue;
+    const queue: Queue = interaction.client.songQueue;
     try {
       await queue.seek(seekPoint);
       return interaction.followUp({ content: `Seeked to ${seekPoint} in ${queue.getCurrentSong().title} ${Emoji.mag}` });

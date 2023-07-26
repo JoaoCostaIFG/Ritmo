@@ -16,7 +16,7 @@ module.exports = {
     }
 
     // @ts-ignore -- songQueue is a valid property
-    const queue = interaction.client.songQueue;
+    const queue: Queue = interaction.client.songQueue;
     queue.stop();
     return interaction.followUp({ content: `Stopped and cleared queue ${Emoji.forbidden}` });
   },

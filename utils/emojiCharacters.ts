@@ -22,4 +22,7 @@ export const Emoji = {
 	'bell': '🔔', 'no_bell': '🔕', 'cross': '❌',
 	'music': '🎵', 'musical_note': '🎵', 'notes': '🎶',
 	'mag': '🔍', 'mag_right': '🔎', 'trash': '🗑️',
+	'clock1': '🕐', 'clock2': '🕑', 'clock3': '🕒', 'clock4': '🕓',
+	'clock5': '🕔', 'clock6': '🕕', 'clock7': '🕖', 'clock8': '🕗',
+	'clock9': '🕘', 'clock10': '🕙', 'clock11': '🕚', 'clock12': '🕛',
 };

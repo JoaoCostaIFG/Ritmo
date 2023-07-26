@@ -2,6 +2,7 @@ import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
 import { soundCommandGuard } from "../../utils/soundCommandGuard";
 import { Emoji } from "../../utils/emojiCharacters";
 import { addSongEmbed } from "../../embeds/addSongEmbed";
+import { Queue } from "../../queue/queue";
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -33,11 +34,10 @@ module.exports = {
     }
 
     // @ts-ignore -- songQueue is a valid property
-    const queue = interaction.client.songQueue;
+    const queue: Queue = interaction.client.songQueue;
     try {
-      const song = await queue.add(songName);
-      await queue.process();
       await queue.join(channel);
+      const song = await queue.add(songName);
 
       await interaction.followUp({ content: `Added ${song.title} ${Emoji.notes}` });
       return interaction.channel?.send({ embeds: [addSongEmbed(song)] });

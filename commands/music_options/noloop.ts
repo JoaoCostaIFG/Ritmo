@@ -1,6 +1,6 @@
-import {ChatInputCommandInteraction, SlashCommandBuilder} from "discord.js";
-import {soundCommandGuard} from "../../utils/soundCommandGuard";
-import {Emoji} from "../../utils/emojiCharacters";
+import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
+import { soundCommandGuard } from "../../utils/soundCommandGuard";
+import { Emoji } from "../../utils/emojiCharacters";
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -16,8 +16,8 @@ module.exports = {
     }
 
     // @ts-ignore -- songQueue is a valid property
-    const queue = interaction.client.songQueue;
+    const queue: Queue = interaction.client.songQueue;
     queue.noloop();
-    return interaction.followUp({content: `Loop disabled ${Emoji.repeat}${Emoji.cross}`});
+    return interaction.followUp({ content: `Loop disabled ${Emoji.repeat}${Emoji.cross}` });
   },
 };
