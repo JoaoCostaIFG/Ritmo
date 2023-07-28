@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
+import { ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder } from "discord.js";
 import { soundCommandGuard } from "../../utils/soundCommandGuard";
 import { Emoji } from "../../utils/emojiCharacters";
 import { Queue } from "../../queue/queue";
@@ -11,27 +11,18 @@ module.exports = {
   async execute(interaction: ChatInputCommandInteraction) {
     await interaction.deferReply();
 
-    try {
-      soundCommandGuard(interaction);
-    } catch (err: any) {
-      return interaction.followUp({ content: err.message, ephemeral: true });
+    const channel = soundCommandGuard(interaction)
+    if (channel.isErr()) {
+      return interaction.followUp({ content: channel.error.message, ephemeral: true });
     }
 
     // @ts-ignore -- songQueue is a valid property
     const queue: Queue = interaction.client.songQueue;
-    try {
-      if (!queue.hasSong()) {
-        return interaction.followUp({ content: `Queue ended ${Emoji.stop_button}` });
-      }
-      const song = queue.getCurrentSong();
-      await interaction.followUp({ content: `Playing ${song.title} ${Emoji.notes}` });
-      return interaction.channel?.send({ embeds: [currentSongEmbed(queue)] });
-    } catch (err: any) {
-      console.error(`Failure on nowplaying: [error=${err}]`);
-      return interaction.followUp({
-        content: "Failed to find the current song.",
-        ephemeral: true,
-      });
-    }
+    return queue.getCurrentSong()
+      .asyncMap(
+        (song) => interaction.followUp({ content: `Playing ${song.title} ${Emoji.notes}`, embeds: [currentSongEmbed(queue).unwrapOr(new EmbedBuilder())] }))
+      .mapErr(
+        (_err) => interaction.followUp({ content: `No song is playing ${Emoji.stop_button}` }),
+      )
   },
 };

@@ -17,11 +17,9 @@ module.exports = {
   async execute(interaction: ChatInputCommandInteraction, input: string) {
     await interaction.deferReply();
 
-    let channel;
-    try {
-      channel = soundCommandGuard(interaction);
-    } catch (err: any) {
-      return interaction.followUp({ content: err.message, ephemeral: true });
+    const channel = soundCommandGuard(interaction)
+    if (channel.isErr()) {
+      return interaction.followUp({ content: channel.error.message, ephemeral: true });
     }
 
     const songName = interaction.options.getString("song") || input;
@@ -36,7 +34,7 @@ module.exports = {
     // @ts-ignore -- songQueue is a valid property
     const queue: Queue = interaction.client.songQueue;
     try {
-      await queue.join(channel);
+      await queue.join(channel.value);
       const song = await queue.add(songName);
 
       await interaction.followUp({ content: `Added ${song.title} ${Emoji.notes}` });

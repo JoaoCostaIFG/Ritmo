@@ -1,4 +1,4 @@
-import { VoiceBasedChannel, VoiceChannel } from "discord.js";
+import { VoiceBasedChannel } from "discord.js";
 import {
   createAudioPlayer,
   createAudioResource,
@@ -12,6 +12,7 @@ import { stream, yt_validate } from "play-dl";
 
 import Song, { SongArgs } from "./song.js";
 import { secs2TimeStr } from "../utils/time.js";
+import { Result, err, ok } from "neverthrow";
 
 interface QueueSongArgs extends SongArgs {
   startTime: number;
@@ -105,11 +106,11 @@ export class Queue {
     return this.currentSong !== undefined;
   }
 
-  getCurrentSong(): QueueSong {
+  getCurrentSong(): Result<QueueSong, Error> {
     if (!this.currentSong) {
-      throw new Error("No song is playing");
+      return err(Error("No song is playing"));
     }
-    return this.currentSong;
+    return ok(this.currentSong);
   }
 
   autoplay(): void {

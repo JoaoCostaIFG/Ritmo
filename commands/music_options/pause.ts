@@ -9,10 +9,9 @@ module.exports = {
   async execute(interaction: ChatInputCommandInteraction) {
     await interaction.deferReply();
 
-    try {
-      soundCommandGuard(interaction);
-    } catch (err: any) {
-      return interaction.followUp({ content: err.message, ephemeral: true });
+    const channel = soundCommandGuard(interaction)
+    if (channel.isErr()) {
+      return interaction.followUp({ content: channel.error.message, ephemeral: true });
     }
 
     // @ts-ignore -- songQueue is a valid property

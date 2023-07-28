@@ -17,10 +17,9 @@ module.exports = {
   async execute(interaction: ChatInputCommandInteraction, input: string) {
     await interaction.deferReply();
 
-    try {
-      soundCommandGuard(interaction);
-    } catch (err: any) {
-      return interaction.followUp({ content: err.message, ephemeral: true });
+    const channel = soundCommandGuard(interaction)
+    if (channel.isErr()) {
+      return interaction.followUp({ content: channel.error.message, ephemeral: true });
     }
 
     const seekPointStr = interaction.options.getString("seek-point") || input;
@@ -37,9 +36,10 @@ module.exports = {
     const queue: Queue = interaction.client.songQueue;
     try {
       await queue.seek(seekPoint);
-      return interaction.followUp({ content: `Seeked to ${seekPoint} in ${queue.getCurrentSong().title} ${Emoji.mag}` });
+      // return interaction.followUp({ content: `Seeked to ${seekPoint} in ${queue.getCurrentSong().title} ${Emoji.mag}` });
+      return interaction.followUp({ content: `Seeked to ${seekPoint} in "TODO titutlo" ${Emoji.mag}` });
     } catch (error: any) {
-      console.error(`Failure while seeking to ${seekPoint} in ${queue.getCurrentSong().title}: [error=${error}]`);
+      // console.error(`Failure while seeking to ${seekPoint} in ${queue.getCurrentSong().title}: [error=${error}]`);
       return interaction.followUp({
         content: "Failed to seek to the point in the song.",
         ephemeral: true,
