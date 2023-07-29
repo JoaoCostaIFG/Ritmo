@@ -185,6 +185,7 @@ export class Queue {
           await this.add(this.relatedSong);
           await this.process();
         } else {
+          // should never happen
           console.error("Tried to autoplay but there is no related song");
         }
       }
