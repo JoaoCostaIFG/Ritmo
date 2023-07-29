@@ -4,8 +4,8 @@ import { Emoji } from "../../utils/emojiCharacters";
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("noloop")
-    .setDescription("Disable loop of songs"),
+    .setName("loop")
+    .setDescription("Enable loop of songs"),
   async execute(interaction: ChatInputCommandInteraction) {
     await interaction.deferReply();
 
@@ -14,9 +14,8 @@ module.exports = {
       return interaction.followUp({ content: channel.error.message, ephemeral: true });
     }
 
-    // @ts-ignore -- songQueue is a valid property
-    const queue: Queue = interaction.client.songQueue;
-    queue.noloop();
-    return interaction.followUp({ content: `Loop disabled ${Emoji.repeat}${Emoji.cross}` });
+    const queue = interaction.client.songQueue;
+    queue.loop();
+    return interaction.followUp({ content: `Loop enabled ${Emoji.repeat}` });
   },
 };

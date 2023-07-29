@@ -2,7 +2,6 @@ import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
 import { soundCommandGuard } from "../../utils/soundCommandGuard";
 import { Emoji } from "../../utils/emojiCharacters";
 import { timeStr2Secs } from "../../utils/time";
-import { Queue } from "../../queue/queue";
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -32,8 +31,7 @@ module.exports = {
     }
     const seekPoint = timeStr2Secs(seekPointStr);
 
-    // @ts-ignore -- songQueue is a valid property
-    const queue: Queue = interaction.client.songQueue;
+    const queue = interaction.client.songQueue;
     try {
       await queue.seek(seekPoint);
       // return interaction.followUp({ content: `Seeked to ${seekPoint} in ${queue.getCurrentSong().title} ${Emoji.mag}` });

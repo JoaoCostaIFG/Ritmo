@@ -4,8 +4,8 @@ import { Emoji } from "../../utils/emojiCharacters";
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("noautoplay")
-    .setDescription("Disable autoplay of songs on queue end"),
+    .setName("resume")
+    .setDescription("Resume the playback"),
   async execute(interaction: ChatInputCommandInteraction) {
     await interaction.deferReply();
 
@@ -14,9 +14,8 @@ module.exports = {
       return interaction.followUp({ content: channel.error.message, ephemeral: true });
     }
 
-    // @ts-ignore -- songQueue is a valid property
-    const queue: Queue = interaction.client.songQueue;
-    queue.noautoplay();
-    return interaction.followUp({ content: `Autoplay disabled ${Emoji.infinity}${Emoji.cross}` });
+    const queue = interaction.client.songQueue;
+    queue.resume();
+    return interaction.followUp({ content: `Resumed playback ${Emoji.arrow_forward}` });
   },
 };

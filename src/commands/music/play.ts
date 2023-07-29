@@ -2,7 +2,6 @@ import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
 import { soundCommandGuard } from "../../utils/soundCommandGuard";
 import { Emoji } from "../../utils/emojiCharacters";
 import { addSongEmbed } from "../../embeds/addSongEmbed";
-import { Queue } from "../../queue/queue";
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -19,32 +18,34 @@ module.exports = {
 
     const channel = soundCommandGuard(interaction)
     if (channel.isErr()) {
-      return interaction.followUp({ content: channel.error.message, ephemeral: true });
+      return interaction.followUp({
+        content: `${channel.error.message} ${Emoji.cross}`,
+        ephemeral: true
+      });
     }
 
     const songName = interaction.options.getString("song") || input;
     if (!songName) {
+      return interaction.followUp({
+        content: "You're missing the song argument.",
+        ephemeral: true,
+      });
+    }
+
+    const queue = interaction.client.songQueue;
+    const joinRes = await queue.join(channel.value);
+    if (joinRes.isErr()) {
       return interaction
         .followUp({
-          content: "You're missing the song argument.",
+          content: `${joinRes.error.message} ${Emoji.cross}`,
           ephemeral: true,
         });
     }
 
-    // @ts-ignore -- songQueue is a valid property
-    const queue: Queue = interaction.client.songQueue;
-    try {
-      await queue.join(channel.value);
-      const song = await queue.add(songName);
-
-      await interaction.followUp({ content: `Added ${song.title} ${Emoji.notes}` });
-      return interaction.channel?.send({ embeds: [addSongEmbed(song)] });
-    } catch (error) {
-      console.error(`Failure while adding song: [error=${error}]`);
-      return interaction.followUp({
-        content: "Failed to play song.",
-        ephemeral: true,
-      });
-    }
+    const song = await queue.add(songName);
+    return interaction.followUp({
+      content: `Added ${song.title} ${Emoji.notes}`,
+      embeds: [addSongEmbed(song)],
+    });
   },
 };

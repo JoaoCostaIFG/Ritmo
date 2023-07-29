@@ -1,76 +1,22 @@
 import { VoiceBasedChannel } from "discord.js";
 import {
   createAudioPlayer,
-  createAudioResource,
-  StreamType,
   joinVoiceChannel,
   AudioPlayer,
   AudioPlayerStatus,
-  AudioResource,
+  VoiceConnectionStatus,
+  entersState,
+  getVoiceConnection,
 } from "@discordjs/voice";
-import { stream, yt_validate } from "play-dl";
+import { yt_validate } from "play-dl";
 
-import Song, { SongArgs } from "./song.js";
-import { secs2TimeStr } from "../utils/time.js";
-import { Result, err, ok } from "neverthrow";
+import Song from "./song.js";
+import { Result, ResultAsync, err, ok } from "neverthrow";
+import { QueueSong } from "./queueSong.js";
 
-interface QueueSongArgs extends SongArgs {
-  startTime: number;
-  resource: AudioResource<null>;
-}
-
-export class QueueSong extends Song {
-  private startTime: number;
-  private resource: AudioResource<null>;
-
-  private constructor({ title, author, duration, url,
-    relatedUrl, thumbnail, startTime, resource }: QueueSongArgs) {
-    super({ title, author, duration, url, relatedUrl, thumbnail });
-    this.startTime = startTime;
-    this.resource = resource;
-  }
-
-  public play(player: AudioPlayer): void {
-    player.play(this.resource);
-  }
-
-  public time(): number {
-    return Math.trunc(this.resource.playbackDuration / 1000.0 + this.startTime);
-  }
-
-  public timeStr(): string {
-    return secs2TimeStr(this.time());
-  }
-
-  public async seek(player: AudioPlayer, seek: number): Promise<void> {
-    this.resource = await QueueSong.makeResource(this.url, seek);
-    this.startTime = seek;
-    this.play(player);
-  }
-
-  public async replay(player: AudioPlayer): Promise<void> {
-    await this.seek(player, 0);
-  }
-
-  private static async makeResource(url: string, seek?: number): Promise<AudioResource<null>> {
-    let songStream = await stream(url, { seek: seek });
-    return createAudioResource(songStream.stream, {
-      inputType: StreamType.Opus,
-    });
-  }
-
-  public static async fromSong(song: Song, seek?: number): Promise<QueueSong> {
-    return new this({
-      title: song.title,
-      author: song.author,
-      duration: song.duration,
-      url: song.url,
-      relatedUrl: song.relatedUrl,
-      thumbnail: song.thumbnail,
-      startTime: (!seek) ? 0 : seek,
-      resource: await this.makeResource(song.url, seek),
-    });
-  }
+enum QueueError {
+  ConnectionFailed = "The connection to the voice channel failed",
+  NotConnected = "Not connected to a voice channel",
 }
 
 export class Queue {
@@ -117,7 +63,7 @@ export class Queue {
     this.doAutoplay = true;
   }
 
-  stopAutoplay(): void {
+  noAutoplay(): void {
     this.doAutoplay = false;
   }
 
@@ -125,7 +71,7 @@ export class Queue {
     this.doLoop = true;
   }
 
-  stopLoop(): void {
+  noLoop(): void {
     this.doLoop = false;
   }
 
@@ -186,13 +132,42 @@ export class Queue {
     return song;
   }
 
-  join(channel: VoiceBasedChannel): void {
+  join(channel: VoiceBasedChannel): ResultAsync<void, Error> {
     const connection = joinVoiceChannel({
       channelId: channel.id,
       guildId: channel.guild.id,
       adapterCreator: channel.guild.voiceAdapterCreator,
+      selfDeaf: true,
+      selfMute: false,
     });
-    connection.subscribe(this.player);
+    connection.on(VoiceConnectionStatus.Disconnected, async (_oldState, _newState) => {
+      try {
+        await Promise.race([
+          entersState(connection, VoiceConnectionStatus.Signalling, 5_000),
+          entersState(connection, VoiceConnectionStatus.Connecting, 5_000),
+        ]);
+        // Seems to be reconnecting to a new channel - ignore disconnect
+      } catch (error) {
+        // Seems to be a real disconnect which SHOULDN'T be recovered from
+        connection.destroy();
+      }
+    });
+
+    return ResultAsync.fromPromise(
+      entersState(connection, VoiceConnectionStatus.Ready, 3_000),
+      () => QueueError.ConnectionFailed
+    )
+      .map(() => { connection.subscribe(this.player); return; })
+      .mapErr((error) => new Error(error));
+  }
+
+  disconnect(channel: VoiceBasedChannel): Result<void, Error> {
+    const connection = getVoiceConnection(channel.guild.id);
+    if (connection) {
+      connection.destroy();
+      return ok(undefined);
+    }
+    return err(new Error(QueueError.NotConnected));
   }
 
   private async process(): Promise<void> {

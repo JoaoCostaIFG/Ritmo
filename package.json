@@ -2,7 +2,7 @@
   "name": "musicbot",
   "version": "1.0.0",
   "description": "",
-  "main": "index.cjs",
+  "main": "src/index.cjs",
   "scripts": {
     "start": "tsc && node dist/index.cjs",
     "deploy": "tsc && node dist/deploy-commands.cjs",

@@ -25,4 +25,5 @@ export const Emoji = {
 	'clock1': '🕐', 'clock2': '🕑', 'clock3': '🕒', 'clock4': '🕓',
 	'clock5': '🕔', 'clock6': '🕕', 'clock7': '🕖', 'clock8': '🕗',
 	'clock9': '🕘', 'clock10': '🕙', 'clock11': '🕚', 'clock12': '🕛',
+	'no_entry': '⛔', 'no_entry_sign': '🚫',
 };

@@ -9,5 +9,3 @@ export function addSongEmbed(song: Song) {
     .setDescription(`by ${song.author}`)
     .setThumbnail(song.thumbnail);
 }
-
-

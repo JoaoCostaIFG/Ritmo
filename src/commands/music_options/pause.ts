@@ -14,8 +14,7 @@ module.exports = {
       return interaction.followUp({ content: channel.error.message, ephemeral: true });
     }
 
-    // @ts-ignore -- songQueue is a valid property
-    const queue: Queue = interaction.client.songQueue;
+    const queue = interaction.client.songQueue;
     queue.pause();
     return interaction.followUp({ content: `Paused ${Emoji.pause_button}` });
   },

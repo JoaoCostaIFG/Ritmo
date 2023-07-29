@@ -1,12 +1,11 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
 import { soundCommandGuard } from "../../utils/soundCommandGuard";
 import { Emoji } from "../../utils/emojiCharacters";
-import { Queue } from "../../queue/queue";
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("autoplay")
-    .setDescription("Enable autoplay of songs on queue end"),
+    .setName("noautoplay")
+    .setDescription("Disable autoplay of songs on queue end"),
   async execute(interaction: ChatInputCommandInteraction) {
     await interaction.deferReply();
 
@@ -15,9 +14,8 @@ module.exports = {
       return interaction.followUp({ content: channel.error.message, ephemeral: true });
     }
 
-    // @ts-ignore -- songQueue is a valid property
-    const queue: Queue = interaction.client.songQueue;
-    queue.autoplay();
-    return interaction.followUp({ content: `Autoplay enabled ${Emoji.infinity}` });
+    const queue = interaction.client.songQueue;
+    queue.noAutoplay();
+    return interaction.followUp({ content: `Autoplay disabled ${Emoji.infinity}${Emoji.cross}` });
   },
 };

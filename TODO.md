@@ -9,7 +9,6 @@
 - shuffle: shuffle queue
 - move: move song to top
 - remove: remove song from top
-- leave: leave channel
 - playlist: add all songs in playlist
 - playskip: da play e skip para ela (mete em primeiro na queue)
 
@@ -17,5 +16,6 @@
 
 - Lock in queue for concurrent requests
 - Song duration a 0 é live
-- Add more exception types to treat errors
-- Now playing pode ter o time left
+- Por now playing simbolos de autoplay, loop, etc
+- Usar logger que falam nos docs do discord.js
+    - Implementar log levels
