@@ -42,10 +42,16 @@ module.exports = {
         });
     }
 
-    const song = await queue.add(songName);
+    const songRes = await queue.add(songName);
+    if (songRes.isErr()) {
+      return interaction.followUp({
+        content: `${songRes.error.message} ${Emoji.cross}`,
+        ephemeral: true,
+      });
+    }
     return interaction.followUp({
-      content: `Added ${song.title} ${Emoji.notes}`,
-      embeds: [addSongEmbed(song)],
+      content: `Added ${songRes.value.title} ${Emoji.notes}`,
+      embeds: [addSongEmbed(songRes.value)],
     });
   },
 };

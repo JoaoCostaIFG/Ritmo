@@ -67,6 +67,6 @@ const client = new Client({
 });
 client.commands = collectCommands();
 registerEvents(client);
-client.songQueue = new Queue();
+client.songQueue = new Queue({});
 
 client.login(process.env.TOKEN);

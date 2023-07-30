@@ -8,18 +8,21 @@ import {
   entersState,
   getVoiceConnection,
 } from "@discordjs/voice";
-import { yt_validate } from "play-dl";
 
 import Song from "./song.js";
-import { Result, ResultAsync, err, ok } from "neverthrow";
+import { Result, ResultAsync, err, errAsync, ok } from "neverthrow";
 import { QueueSong } from "./queueSong.js";
+import { QueueError } from "./queueError.js";
 
-enum QueueError {
-  ConnectionFailed = "The connection to the voice channel failed",
-  NotConnected = "Not connected to a voice channel",
+interface QueueArgs {
+  maxSize?: number;
+  maxHistory?: number;
 }
 
 export class Queue {
+  private readonly maxSize: number;
+  private readonly maxHistory: number;
+
   private songs: Song[];
   private player: AudioPlayer;
   private doAutoplay: boolean;
@@ -27,7 +30,10 @@ export class Queue {
   private relatedSong: string | undefined;
   private currentSong: QueueSong | undefined;
 
-  constructor() {
+  constructor({ maxSize, maxHistory }: QueueArgs) {
+    this.maxSize = maxSize ?? 100;
+    this.maxHistory = maxHistory ?? 10;
+
     this.songs = [];
     this.player = createAudioPlayer();
     this.doAutoplay = false;
@@ -54,7 +60,7 @@ export class Queue {
 
   getCurrentSong(): Result<QueueSong, Error> {
     if (!this.currentSong) {
-      return err(Error("No song is playing"));
+      return err(Error(QueueError.NoSongPlaying));
     }
     return ok(this.currentSong);
   }
@@ -80,6 +86,8 @@ export class Queue {
   }
 
   pause(): void {
+    // TODO remove this
+    console.log(this.maxHistory);
     this.player.pause();
   }
 
@@ -95,14 +103,14 @@ export class Queue {
     this.player.stop();
   }
 
-  async seek(seconds: number): Promise<void> {
+  seek(seconds: number): ResultAsync<void, Error> {
     if (!this.currentSong) {
-      throw new Error("No song is playing");
+      return errAsync(Error(QueueError.NoSongPlaying));
     } else if (this.currentSong.duration <= seconds) {
-      throw new Error("Seeking past song duration");
+      return errAsync(Error(QueueError.InvalidSeek));
     }
 
-    this.currentSong.seek(this.player, seconds);
+    return this.currentSong.seek(this.player, seconds);
   }
 
   async next(): Promise<void> {
@@ -120,16 +128,20 @@ export class Queue {
     return this.next();
   }
 
-  async add(arg: string): Promise<Song> {
-    const isUrl = arg.startsWith("https") && yt_validate(arg) !== "search";
+  add(arg: string): ResultAsync<Song, Error> {
+    if (this.songs.length >= this.maxSize) {
+      return errAsync(new Error(QueueError.QueueMaxSize));
+    }
 
-    const song = isUrl ? await Song.fromUrl(arg) : await Song.fromQuery(arg);
-    this.songs.push(song);
-
-    // play if there is nothing playing
-    await this.process();
-
-    return song;
+    let songRes: ResultAsync<Song, Error> =
+      (arg.startsWith("https")) ? Song.fromUrl(arg) : Song.fromQuery(arg);
+    return songRes
+      .map(song => {
+        this.songs.push(song);
+        // play if there is nothing playing
+        this.process();
+        return song;
+      });
   }
 
   join(channel: VoiceBasedChannel): ResultAsync<void, Error> {
@@ -182,8 +194,12 @@ export class Queue {
       this.player.stop();
       if (this.doAutoplay) {
         if (this.relatedSong) {
-          await this.add(this.relatedSong);
-          await this.process();
+          const addRes = await this.add(this.relatedSong);
+          if (addRes.isErr()) {
+            console.error(addRes.error.message);
+          } else {
+            await this.process();
+          }
         } else {
           // should never happen
           console.error("Tried to autoplay but there is no related song");
@@ -195,7 +211,12 @@ export class Queue {
       this.relatedSong = song.relatedUrl;
     }
 
-    this.currentSong = await QueueSong.fromSong(song);
+    const queueSongRes = await QueueSong.fromSong(song);
+    if (queueSongRes.isErr()) {
+      console.error(queueSongRes.error.message);
+      return;
+    }
+    this.currentSong = queueSongRes.value;
     this.currentSong.play(this.player);
   }
 }

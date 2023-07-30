@@ -1,7 +1,7 @@
 import { EmbedBuilder } from 'discord.js';
 import Song from '../queue/song';
 
-export function addSongEmbed(song: Song) {
+export function addSongEmbed(song: Song): EmbedBuilder {
   return new EmbedBuilder()
     .setColor(0x0099FF)
     .setTitle(song.title)

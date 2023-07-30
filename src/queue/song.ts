@@ -1,5 +1,7 @@
 import { video_basic_info, yt_validate, search } from "play-dl";
 import { secs2TimeStr } from "../utils/time";
+import { ResultAsync, err, errAsync } from "neverthrow";
+import { QueueError } from "./queueError";
 
 export interface SongArgs {
   title: string;
@@ -31,41 +33,46 @@ export default class Song {
     return secs2TimeStr(this.duration);
   }
 
-  static async fromUrl(url: string): Promise<Song> {
+  static fromUrl(url: string): ResultAsync<Song, Error> {
     if (url.startsWith("https") && yt_validate(url) !== "video") {
-      throw new Error("Invalid url");
+      return errAsync(new Error(QueueError.SongURLFail));
     }
 
-    const songInfo = await video_basic_info(url);
-    return new this({
+    return ResultAsync.fromPromise(video_basic_info(url), () => new Error(QueueError.SongURLFail))
+      .map(songInfo => new this({
         title: songInfo.video_details.title!,
         author: songInfo.video_details.channel!.name!,
         duration: songInfo.video_details.durationInSec,
         url: songInfo.video_details.url,
         relatedUrl: songInfo.related_videos[0],
         thumbnail: songInfo.video_details.thumbnails[0].url,
-      });
+      }));
   }
 
-  static async fromQuery(query: string) {
-    const searched = await search(query, {
-      limit: 1,
-      source: { youtube: "video" },
-    });
-
-    if (searched.length === 0) {
-      throw new Error("No result found");
-    }
-
-    // Note: unfornately, play-dl doesn't have a way to get the related video from search
-    const songInfo = await video_basic_info(searched[0].url);
-    return new this({
-        title: songInfo.video_details.title!,
-        author: songInfo.video_details.channel!.name!,
-        duration: songInfo.video_details.durationInSec,
-        url: songInfo.video_details.url,
-        relatedUrl: songInfo.related_videos[0],
-        thumbnail: songInfo.video_details.thumbnails[0].url,
-      });
+  static fromQuery(query: string): ResultAsync<Song, Error> {
+    return ResultAsync.fromPromise(
+      search(query, { limit: 1, source: { youtube: "video" } }),
+      () => new Error(QueueError.SongQueryFail),
+    )
+      .andThen(searched => {
+        if (searched.length === 0) {
+          return err(new Error(QueueError.SongQueryFail));
+        }
+        // Note: unfornately, play-dl doesn't have a way to get the related video from search
+        return ResultAsync.fromPromise(
+          video_basic_info(searched[0].url),
+          () => new Error(QueueError.SongQueryFail),
+        )
+      })
+      .map(
+        songInfo => new this({
+          title: songInfo.video_details.title!,
+          author: songInfo.video_details.channel!.name!,
+          duration: songInfo.video_details.durationInSec,
+          url: songInfo.video_details.url,
+          relatedUrl: songInfo.related_videos[0],
+          thumbnail: songInfo.video_details.thumbnails[0].url,
+        }),
+      );
   }
 }
