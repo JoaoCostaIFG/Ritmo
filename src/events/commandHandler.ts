@@ -4,8 +4,6 @@ module.exports = {
   name: Events.InteractionCreate,
   async execute(interaction: ChatInputCommandInteraction) {
     if (!interaction.isChatInputCommand()) return;
-
-    // @ts-ignore -- command is a valid property
     const command = interaction.client.commands.get(interaction.commandName);
 
     if (!command) {
@@ -17,8 +15,9 @@ module.exports = {
 
     try {
       await command.execute(interaction);
-    } catch (error) {
-      console.error(`Error executing ${interaction.commandName} : [error=${error}]`);
+    } catch (errUnknown) {
+      const error = ensureError(errUnknown);
+      console.error(`Error executing ${interaction.commandName} : [error=${error.message}]`);
       if (interaction.replied || interaction.deferred) {
         await interaction.followUp({
           content: "There was an error while executing this command!",

@@ -155,22 +155,26 @@ export class Queue {
     connection.on(VoiceConnectionStatus.Disconnected, async (_oldState, _newState) => {
       try {
         await Promise.race([
-          entersState(connection, VoiceConnectionStatus.Signalling, 5_000),
-          entersState(connection, VoiceConnectionStatus.Connecting, 5_000),
+          entersState(connection, VoiceConnectionStatus.Signalling, 2_000),
+          entersState(connection, VoiceConnectionStatus.Connecting, 2_000),
         ]);
         // Seems to be reconnecting to a new channel - ignore disconnect
-      } catch (error) {
+      } catch (_error) {
         // Seems to be a real disconnect which SHOULDN'T be recovered from
-        connection.destroy();
+        this.stop();
+        try {
+          connection.destroy();
+        } catch (_error) {
+          // ignored
+        }
       }
     });
 
     return ResultAsync.fromPromise(
       entersState(connection, VoiceConnectionStatus.Ready, 3_000),
-      () => QueueError.ConnectionFailed
+      () => new Error(QueueError.ConnectionFailed),
     )
-      .map(() => { connection.subscribe(this.player); return; })
-      .mapErr((error) => new Error(error));
+      .map(() => { connection.subscribe(this.player); });
   }
 
   disconnect(channel: VoiceBasedChannel): Result<void, Error> {

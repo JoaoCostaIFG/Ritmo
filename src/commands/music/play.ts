@@ -1,17 +1,33 @@
-import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
+import { AutocompleteInteraction, ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
 import { soundCommandGuard } from "../../utils/soundCommandGuard";
 import { Emoji } from "../../utils/emojiCharacters";
 import { addSongEmbed } from "../../embeds/addSongEmbed";
+import { yt_validate, search } from "play-dl";
+import { ResultAsync, okAsync } from "neverthrow";
+
+function getYtAutocomplete(query: string): ResultAsync<string[], Error> {
+  if (query.startsWith("https://") && yt_validate(query)) {
+    // don't autocomplete URLs
+    return okAsync([]);
+  }
+
+  return ResultAsync.fromPromise(
+    search(query, { limit: 10, source: { youtube: "video" } }),
+    () => new Error("Failed to autocomplete query"),
+  )
+    .map(searched =>
+      searched.map(song => song.title ?? "").filter(title => title !== ""));
+}
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("play")
     .setDescription("Plays song")
-    .addStringOption((option) =>
-      option
-        .setName("song")
-        .setDescription("The song to play")
-        .setRequired(true),
+    .addStringOption(option => option
+      .setName("song")
+      .setDescription("The song to play")
+      .setAutocomplete(true)
+      .setRequired(true),
     ),
   async execute(interaction: ChatInputCommandInteraction, input: string) {
     await interaction.deferReply();
@@ -33,25 +49,25 @@ module.exports = {
     }
 
     const queue = interaction.client.songQueue;
-    const joinRes = await queue.join(channel.value);
-    if (joinRes.isErr()) {
-      return interaction
-        .followUp({
-          content: `${joinRes.error.message} ${Emoji.cross}`,
-          ephemeral: true,
-        });
-    }
 
-    const songRes = await queue.add(songName);
-    if (songRes.isErr()) {
-      return interaction.followUp({
-        content: `${songRes.error.message} ${Emoji.cross}`,
+    return await queue.join(channel.value)
+      .andThen(() => queue.add(songName))
+      .map((song) => interaction.followUp({
+        content: `Added ${song.title} ${Emoji.notes}`,
+        embeds: [addSongEmbed(song)],
+      }))
+      .mapErr((error) => interaction.followUp({
+        content: `${error.message} ${Emoji.cross}`,
         ephemeral: true,
-      });
+      }));
+  },
+  async autocomplete(interaction: AutocompleteInteraction) {
+    const focusedValue = interaction.options.getFocused();
+    const choiceRes = await getYtAutocomplete(focusedValue)
+    if (choiceRes.isOk()) {
+      await interaction.respond(
+        choiceRes.value.map(choice => ({ name: choice, value: choice })),
+      );
     }
-    return interaction.followUp({
-      content: `Added ${songRes.value.title} ${Emoji.notes}`,
-      embeds: [addSongEmbed(songRes.value)],
-    });
   },
 };
