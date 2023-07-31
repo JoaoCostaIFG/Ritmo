@@ -51,9 +51,9 @@ module.exports = {
     const queue = interaction.client.songQueue;
 
     return await queue.join(channel.value)
-      .andThen(() => queue.add(songName))
+      .andThen(() => queue.play(songName))
       .map((song) => interaction.followUp({
-        content: `Added ${song.title} ${Emoji.notes}`,
+        content: `Added ${song.title} ${Emoji.music}`,
         embeds: [addSongEmbed(song)],
       }))
       .mapErr((error) => interaction.followUp({

@@ -22,7 +22,7 @@ export default class Song {
 
   constructor({ title, author, duration, url, relatedUrl, thumbnail }: SongArgs) {
     this.title = title;
-    this.author = author;
+    this.author = author ?? "Unknown";
     this.duration = duration; // in seconds
     this.url = url;
     this.relatedUrl = relatedUrl; // for autoplay
@@ -31,22 +31,6 @@ export default class Song {
 
   public durationStr(): string {
     return secs2TimeStr(this.duration);
-  }
-
-  static fromUrl(url: string): ResultAsync<Song, Error> {
-    if (url.startsWith("https") && yt_validate(url) !== "video") {
-      return errAsync(new Error(QueueError.SongURLFail));
-    }
-
-    return ResultAsync.fromPromise(video_basic_info(url), () => new Error(QueueError.SongURLFail))
-      .map(songInfo => new this({
-        title: songInfo.video_details.title!,
-        author: songInfo.video_details.channel!.name!,
-        duration: songInfo.video_details.durationInSec,
-        url: songInfo.video_details.url,
-        relatedUrl: songInfo.related_videos[0],
-        thumbnail: songInfo.video_details.thumbnails[0].url,
-      }));
   }
 
   static fromQuery(query: string): ResultAsync<Song, Error> {
@@ -74,5 +58,26 @@ export default class Song {
           thumbnail: songInfo.video_details.thumbnails[0].url,
         }),
       );
+  }
+
+  static fromUrl(url: string): ResultAsync<Song, Error> {
+    if (url.startsWith("https")) {
+      const validation = yt_validate(url);
+      if (validation !== "video" && validation !== "playlist") {
+        return errAsync(new Error(QueueError.SongURLFail));
+      }
+    } else {
+      return errAsync(new Error(QueueError.SongURLFail));
+    }
+
+    return ResultAsync.fromPromise(video_basic_info(url), () => new Error(QueueError.SongURLFail))
+      .map(songInfo => new this({
+        title: songInfo.video_details.title!,
+        author: songInfo.video_details.channel!.name!,
+        duration: songInfo.video_details.durationInSec,
+        url: songInfo.video_details.url,
+        relatedUrl: songInfo.related_videos[0],
+        thumbnail: songInfo.video_details.thumbnails[0].url,
+      }));
   }
 }

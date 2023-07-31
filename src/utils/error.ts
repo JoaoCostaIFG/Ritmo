@@ -1,4 +1,4 @@
-function ensureError(value: unknown): Error {
+export default function ensureError(value: unknown): Error {
     if (value instanceof Error) return value
 
     let stringified = '[Unable to stringify the thrown value]'

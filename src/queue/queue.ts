@@ -13,6 +13,7 @@ import Song from "./song.js";
 import { Result, ResultAsync, err, errAsync, ok } from "neverthrow";
 import { QueueSong } from "./queueSong.js";
 import { QueueError } from "./queueError.js";
+import Playlist from "./playlist.js";
 
 interface QueueArgs {
   maxSize?: number;
@@ -128,19 +129,32 @@ export class Queue {
     return this.next();
   }
 
-  add(arg: string): ResultAsync<Song, Error> {
+  play(arg: string): ResultAsync<Song, Error> {
     if (this.songs.length >= this.maxSize) {
       return errAsync(new Error(QueueError.QueueMaxSize));
     }
 
     let songRes: ResultAsync<Song, Error> =
       (arg.startsWith("https")) ? Song.fromUrl(arg) : Song.fromQuery(arg);
-    return songRes
-      .map(song => {
-        this.songs.push(song);
+    return songRes.map(song => {
+      this.songs.push(song);
+      // play if there is nothing playing
+      this.process();
+      return song;
+    });
+  }
+
+  playList(arg: string): ResultAsync<Playlist, Error> {
+    if (this.songs.length >= this.maxSize) {
+      return errAsync(new Error(QueueError.QueueMaxSize));
+    }
+
+    return Playlist.fromUrl(arg, this.maxSize - this.songs.length)
+      .map(playlist => {
+        this.songs.push(...playlist.songs);
         // play if there is nothing playing
         this.process();
-        return song;
+        return playlist;
       });
   }
 
@@ -198,15 +212,13 @@ export class Queue {
       this.player.stop();
       if (this.doAutoplay) {
         if (this.relatedSong) {
-          const addRes = await this.add(this.relatedSong);
+          const addRes = await this.play(this.relatedSong);
           if (addRes.isErr()) {
             console.error(addRes.error.message);
-          } else {
-            await this.process();
           }
         } else {
           // should never happen
-          console.error("Tried to autoplay but there is no related song");
+          console.error(QueueError.NoRelated);
         }
       }
       return;

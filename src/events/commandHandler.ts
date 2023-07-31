@@ -1,4 +1,5 @@
 import { Events, ChatInputCommandInteraction } from "discord.js";
+import ensureError from "../utils/error";
 
 module.exports = {
   name: Events.InteractionCreate,

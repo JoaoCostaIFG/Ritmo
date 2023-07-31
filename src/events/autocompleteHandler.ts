@@ -1,4 +1,5 @@
 import { AutocompleteInteraction, Events } from "discord.js";
+import ensureError from "../utils/error";
 
 module.exports = {
   name: Events.InteractionCreate,
