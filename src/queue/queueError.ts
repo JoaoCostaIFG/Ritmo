@@ -10,4 +10,6 @@ export enum QueueError {
   NoRelated = "Can't autoplay because there is no related song",
   NoSongPlaying = "There is no song playing",
   InvalidSeek = "Invalid seek time for the current song",
+  InvalidMove = "Invalid move index for the queue",
+  InvalidRemove = "Invalid remove index for the queue",
 }

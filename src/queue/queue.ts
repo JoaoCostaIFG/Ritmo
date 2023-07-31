@@ -1,4 +1,4 @@
-import { VoiceBasedChannel } from "discord.js";
+import {VoiceBasedChannel} from "discord.js";
 import {
   createAudioPlayer,
   joinVoiceChannel,
@@ -10,9 +10,9 @@ import {
 } from "@discordjs/voice";
 
 import Song from "./song.js";
-import { Result, ResultAsync, err, errAsync, ok } from "neverthrow";
-import { QueueSong } from "./queueSong.js";
-import { QueueError } from "./queueError.js";
+import {Result, ResultAsync, err, errAsync, ok} from "neverthrow";
+import {QueueSong} from "./queueSong.js";
+import {QueueError} from "./queueError.js";
 import Playlist from "./playlist.js";
 
 interface QueueArgs {
@@ -31,7 +31,7 @@ export class Queue {
   private relatedSong: string | undefined;
   private currentSong: QueueSong | undefined;
 
-  constructor({ maxSize, maxHistory }: QueueArgs) {
+  constructor({maxSize, maxHistory}: QueueArgs) {
     this.maxSize = maxSize ?? 100;
     this.maxHistory = maxHistory ?? 10;
 
@@ -122,6 +122,34 @@ export class Queue {
     return this.currentSong.seek(this.player, seconds);
   }
 
+  move(from: number): Result<number, Error>
+  move(from: number, to: number | undefined): Result<number, Error>
+  move(from: number, to?: number | undefined): Result<number, Error> {
+    const fromIdx = from - 1;
+    if (fromIdx >= this.songs.length || fromIdx < 0) {
+      return err(Error(QueueError.InvalidMove));
+    }
+
+    const toIdx = (to === undefined) ? 0 : to - 1;
+    if (toIdx >= this.songs.length || toIdx < 0) {
+      return err(Error(QueueError.InvalidMove));
+    }
+
+    const tmp = this.songs.splice(fromIdx, 1)[0];
+    this.songs.splice(toIdx, 0, tmp);
+
+    return ok(toIdx + 1);
+  }
+
+  remove(from: number) : Result<Song, Error> {
+    const fromIdx = from - 1;
+    if (fromIdx >= this.songs.length || fromIdx < 0) {
+      return err(Error(QueueError.InvalidMove));
+    }
+
+    return ok(this.songs.splice(fromIdx, 1)[0]);
+  }
+
   async next(): Promise<void> {
     if (!this.doLoop) {
       this.currentSong = undefined;
@@ -196,7 +224,7 @@ export class Queue {
       entersState(connection, VoiceConnectionStatus.Ready, 3_000),
       () => new Error(QueueError.ConnectionFailed),
     )
-      .map(() => { connection.subscribe(this.player); });
+      .map(() => {connection.subscribe(this.player);});
   }
 
   disconnect(channel: VoiceBasedChannel): Result<void, Error> {

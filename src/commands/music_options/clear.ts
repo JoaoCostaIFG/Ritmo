@@ -15,7 +15,7 @@ module.exports = {
     }
 
     const queue = interaction.client.songQueue;
-    queue.stop();
+    queue.clear();
     return interaction.followUp({ content: `Cleared queue ${Emoji.trash}` });
   },
 };
