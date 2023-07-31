@@ -66,6 +66,14 @@ export class Queue {
     return ok(this.currentSong);
   }
 
+  get size(): number {
+    return this.songs.length;
+  }
+
+  get queue(): Song[] {
+    return this.songs;
+  }
+
   autoplay(): void {
     this.doAutoplay = true;
   }
