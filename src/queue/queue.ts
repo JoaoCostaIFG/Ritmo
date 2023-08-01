@@ -150,6 +150,17 @@ export class Queue {
     return ok(this.songs.splice(fromIdx, 1)[0]);
   }
 
+  shuffle() : void {
+    // Fisher–Yates shuffle algorithm
+    // https://blog.codinghorror.com/the-danger-of-naivete/
+    for (let i = this.songs.length - 1; i > 0; --i) {
+        const n = Math.floor(Math.random() * (i + 1));
+        const tmp = this.songs[i];
+        this.songs[i] = this.songs[n];
+        this.songs[n] = tmp;
+    }
+  }
+
   async next(): Promise<void> {
     if (!this.doLoop) {
       this.currentSong = undefined;
@@ -165,14 +176,16 @@ export class Queue {
     return this.next();
   }
 
-  play(arg: string): ResultAsync<Song, Error> {
+  private query2Song(arg: string): ResultAsync<Song, Error> {
     if (this.songs.length >= this.maxSize) {
       return errAsync(new Error(QueueError.QueueMaxSize));
     }
 
-    let songRes: ResultAsync<Song, Error> =
-      (arg.startsWith("https")) ? Song.fromUrl(arg) : Song.fromQuery(arg);
-    return songRes.map(song => {
+    return (arg.startsWith("https")) ? Song.fromUrl(arg) : Song.fromQuery(arg);
+  }
+
+  play(arg: string): ResultAsync<Song, Error> {
+    return this.query2Song(arg).map(song => {
       this.songs.push(song);
       // play if there is nothing playing
       this.process();
@@ -180,7 +193,16 @@ export class Queue {
     });
   }
 
-  playList(arg: string): ResultAsync<Playlist, Error> {
+  playskip(arg: string): ResultAsync<Song, Error> {
+    return this.query2Song(arg).map(song => {
+      this.songs.splice(0, 0, song);
+      // play if there is nothing playing
+      this.skip();
+      return song;
+    });
+  }
+
+  playlist(arg: string): ResultAsync<Playlist, Error> {
     if (this.songs.length >= this.maxSize) {
       return errAsync(new Error(QueueError.QueueMaxSize));
     }

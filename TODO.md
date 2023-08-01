@@ -5,7 +5,6 @@
 - Back: go back to previous song
 - replay: add current song to next
 - lyrics: fetch lyrics
-- playskip: da play e skip para ela (mete em primeiro na queue)
 
 ## Features
 

@@ -4,11 +4,10 @@ import { Emoji } from "../../utils/emojiCharacters";
 import { addSongEmbed } from "../../embeds/addSongEmbed";
 import getYtAutocomplete from "../../utils/ytAutocomplete";
 
-
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("play")
-    .setDescription("Plays song")
+    .setName("playskip")
+    .setDescription("Plays song (skipping to it)")
     .addStringOption(option => option
       .setName("song")
       .setDescription("The song to play")
@@ -37,7 +36,7 @@ module.exports = {
     const queue = interaction.client.songQueue;
 
     return await queue.join(channel.value)
-      .andThen(() => queue.play(songName))
+      .andThen(() => queue.playskip(songName))
       .map((song) => interaction.followUp({
         content: `Added ${song.title} ${Emoji.music}`,
         embeds: [addSongEmbed(song)],
