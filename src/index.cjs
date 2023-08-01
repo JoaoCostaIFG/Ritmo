@@ -7,6 +7,7 @@ const { Client, Collection, GatewayIntentBits } = require("discord.js");
 const { generateDependencyReport } = require("@discordjs/voice");
 
 const { Queue } = require("./queue/queue.js");
+const {logger} = require("./utils/logger.js");
 
 function collectCommands() {
   let commands = new Collection();
@@ -28,8 +29,8 @@ function collectCommands() {
       if ("data" in command && "execute" in command) {
         commands.set(command.data.name, command);
       } else {
-        console.log(
-          `[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`,
+        logger.warn(
+          `The command at ${filePath} is missing a required "data" or "execute" property.`,
         );
       }
     }
@@ -55,7 +56,7 @@ async function registerEvents(client) {
   }
 }
 
-console.log(generateDependencyReport());
+logger.info(generateDependencyReport());
 
 // Create a new client instance
 const client = new Client({

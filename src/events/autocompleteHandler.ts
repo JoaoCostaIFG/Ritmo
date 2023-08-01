@@ -1,5 +1,6 @@
-import { AutocompleteInteraction, Events } from "discord.js";
+import {AutocompleteInteraction, Events} from "discord.js";
 import ensureError from "../utils/error";
+import {logger} from "../utils/logger";
 
 module.exports = {
   name: Events.InteractionCreate,
@@ -8,7 +9,7 @@ module.exports = {
     const command = interaction.client.commands.get(interaction.commandName);
 
     if (!command) {
-      console.error(
+      logger.error(
         `No command matching ${interaction.commandName} was found.`,
       );
       return;
@@ -18,7 +19,7 @@ module.exports = {
       await command.autocomplete(interaction);
     } catch (errUnknown) {
       const error = ensureError(errUnknown);
-      console.error(`Error autocompleting for command ${interaction.commandName}: [error=${error.message}]`);
+      logger.error(`Error autocompleting for command ${interaction.commandName}: [error=${error.message}]`);
     }
   },
 };

@@ -14,6 +14,7 @@ import {Result, ResultAsync, err, errAsync, ok} from "neverthrow";
 import {QueueSong} from "./queueSong.js";
 import {QueueError} from "./queueError.js";
 import Playlist from "./playlist.js";
+import {logger} from "../utils/logger.js";
 
 interface QueueArgs {
   maxSize?: number;
@@ -42,16 +43,19 @@ export class Queue {
     this.relatedSong = undefined;
     this.currentSong = undefined;
 
+    // TODO remove this
+    logger.info(this.maxHistory);
+
     this.player.on(AudioPlayerStatus.Idle, async () => {
       try {
         await this.next();
       } catch (error) {
-        console.error(`The player is idle and we got an error while getting to the next song: [error=${error}]`);
+        logger.error(`The player is idle and we got an error while getting to the next song: [error=${error}]`);
       }
     });
 
     this.player.on('error', error => {
-      console.error(`The player found an error: [error=${error}]`);
+      logger.error(`The player found an error: [error=${error}]`);
     });
   }
 
@@ -95,8 +99,6 @@ export class Queue {
   }
 
   pause(): void {
-    // TODO remove this
-    console.log(this.maxHistory);
     this.player.pause();
   }
 
@@ -193,6 +195,13 @@ export class Queue {
     });
   }
 
+  replay(): ResultAsync<Song, Error> {
+    if (!this.currentSong) {
+      return errAsync(new Error(QueueError.NoSongPlaying));
+    }
+    return this.play(this.currentSong.url);
+  }
+
   playskip(arg: string): ResultAsync<Song, Error> {
     return this.query2Song(arg).map(song => {
       this.songs.splice(0, 0, song);
@@ -272,11 +281,11 @@ export class Queue {
         if (this.relatedSong) {
           const addRes = await this.play(this.relatedSong);
           if (addRes.isErr()) {
-            console.error(addRes.error.message);
+            logger.error(addRes.error.message);
           }
         } else {
           // should never happen
-          console.error(QueueError.NoRelated);
+          logger.warn(QueueError.NoRelated);
         }
       }
       return;
@@ -287,7 +296,7 @@ export class Queue {
 
     const queueSongRes = await QueueSong.fromSong(song);
     if (queueSongRes.isErr()) {
-      console.error(queueSongRes.error.message);
+      logger.error(queueSongRes.error.message);
       return;
     }
     this.currentSong = queueSongRes.value;
