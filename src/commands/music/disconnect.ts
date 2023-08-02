@@ -1,12 +1,13 @@
-import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
-import { soundCommandGuard } from "../../utils/soundCommandGuard";
-import { Emoji } from "../../utils/emojiCharacters";
+import {ChatInputCommandInteraction} from "discord.js";
+import {soundCommandGuard} from "../../utils/soundCommandGuard";
+import {Emoji} from "../../utils/emojiCharacters";
+import Command from "../../discord_utils/command";
 
-module.exports = {
-  data: new SlashCommandBuilder()
-    .setName("disconnect")
-    .setDescription("Stop playing and disconnect from the voice channel"),
-  async execute(interaction: ChatInputCommandInteraction) {
+export const cmd = new Command()
+  .setName("disconnect")
+  .addAlias("dc")
+  .setDescription("Stop playing and disconnect from the voice channel")
+  .setExec(async (interaction: ChatInputCommandInteraction) => {
     await interaction.deferReply();
 
     const channel = soundCommandGuard(interaction)
@@ -29,5 +30,4 @@ module.exports = {
     return interaction.followUp({
       content: `Stopped and disconnected ${Emoji.no_entry}`
     });
-  },
-};
+  });

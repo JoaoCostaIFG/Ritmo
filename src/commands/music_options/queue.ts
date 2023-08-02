@@ -1,13 +1,14 @@
-import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
-import { soundCommandGuard } from "../../utils/soundCommandGuard";
-import { Emoji } from "../../utils/emojiCharacters";
-import { queueEmbed } from "../../embeds/queueEmbed";
+import {ChatInputCommandInteraction} from "discord.js";
+import {soundCommandGuard} from "../../utils/soundCommandGuard";
+import {Emoji} from "../../utils/emojiCharacters";
+import {queueEmbed} from "../../embeds/queueEmbed";
+import Command from "../../discord_utils/command";
 
-module.exports = {
-  data: new SlashCommandBuilder()
-    .setName("queue")
-    .setDescription("Lists the queue contents"),
-  async execute(interaction: ChatInputCommandInteraction) {
+export const cmd = new Command()
+  .setName("queue")
+  .addAlias("q")
+  .setDescription("Lists the queue contents")
+  .setExec(async (interaction: ChatInputCommandInteraction) => {
     await interaction.deferReply();
 
     const channel = soundCommandGuard(interaction)
@@ -22,5 +23,4 @@ module.exports = {
       content: `The queue ${Emoji.paperstack}`,
       embeds: [queueEmbed(queue)],
     });
-  },
-};
+  });

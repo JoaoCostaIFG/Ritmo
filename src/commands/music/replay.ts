@@ -1,13 +1,13 @@
-import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
-import { soundCommandGuard } from "../../utils/soundCommandGuard";
-import { Emoji } from "../../utils/emojiCharacters";
-import { addSongEmbed } from "../../embeds/addSongEmbed";
+import {ChatInputCommandInteraction} from "discord.js";
+import {soundCommandGuard} from "../../utils/soundCommandGuard";
+import {Emoji} from "../../utils/emojiCharacters";
+import {addSongEmbed} from "../../embeds/addSongEmbed";
+import Command from "../../discord_utils/command";
 
-module.exports = {
-  data: new SlashCommandBuilder()
-    .setName("replay")
-    .setDescription("Replay the current song"),
-  async execute(interaction: ChatInputCommandInteraction) {
+export const cmd = new Command()
+  .setName("replay")
+  .setDescription("Replay the current song")
+  .setExec(async (interaction: ChatInputCommandInteraction) => {
     await interaction.deferReply();
 
     const channel = soundCommandGuard(interaction)
@@ -22,13 +22,14 @@ module.exports = {
 
     return await queue.join(channel.value)
       .andThen(() => queue.replay())
-      .map((song) => interaction.followUp({
-        content: `Added ${song.title} ${Emoji.music}`,
-        embeds: [addSongEmbed(song)],
-      }))
-      .mapErr((error) => interaction.followUp({
-        content: `${error.message} ${Emoji.cross}`,
-        ephemeral: true,
-      }));
-  },
-};
+      .match(
+        (song) => interaction.followUp({
+          content: `Added ${song.title} ${Emoji.music}`,
+          embeds: [addSongEmbed(song)],
+        }),
+        (error) => interaction.followUp({
+          content: `${error.message} ${Emoji.cross}`,
+          ephemeral: true,
+        })
+      );
+  });
