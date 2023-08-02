@@ -12,5 +12,3 @@ export function queueEmbed(queue: Queue): EmbedBuilder {
 
   return embed;
 }
-
-

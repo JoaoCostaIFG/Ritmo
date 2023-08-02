@@ -7,7 +7,7 @@ const { Client, Collection, GatewayIntentBits } = require("discord.js");
 const { generateDependencyReport } = require("@discordjs/voice");
 
 const { Queue } = require("./queue/queue.js");
-const {logger} = require("./utils/logger.js");
+const { logger } = require("./utils/logger.js");
 
 function collectCommands() {
   let commands = new Collection();
