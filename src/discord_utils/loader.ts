@@ -27,6 +27,9 @@ export function loadCommands(commandsBasePath: string): Result<Collection<string
             // Set a new item in the Collection with the key as the command name and the value as the exported module
             if (cmd instanceof Command) {
                 commands.set(cmd.name, cmd);
+                cmd.aliases.forEach((alias) => {
+                    commands.set(alias, cmd);
+                });
             } else {
                 logger.warn(`File at ${filePath} is not and instance of Command.`);
             }
@@ -34,8 +37,8 @@ export function loadCommands(commandsBasePath: string): Result<Collection<string
     }
 
     // validation
-    
-    const commandNames = Array.from(commands.map(c => [c.name, ...c.aliases]).flat(2));
+
+    const commandNames = Array.from(commands.keys());
     if (commandNames.length > 100) {
         return err(Error(`You have too many commands (${commandNames.length}). The max is 100`));
     }
