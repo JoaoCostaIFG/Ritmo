@@ -5,7 +5,7 @@ import {logger} from "../utils/logger";
 import Command from "./command";
 import {err, ok, Result} from "neverthrow";
 
-export function loadCommands(commandsBasePath: string): Result<Collection<string, Command>, Error> {
+export function loadCommands(commandsBasePath: string, withAliases: boolean = true): Result<Collection<string, Command>, Error> {
     let commands: Collection<string, Command> = new Collection();
 
     const commandFolders = fs.readdirSync(commandsBasePath);
@@ -27,9 +27,11 @@ export function loadCommands(commandsBasePath: string): Result<Collection<string
             // Set a new item in the Collection with the key as the command name and the value as the exported module
             if (cmd instanceof Command) {
                 commands.set(cmd.name, cmd);
-                cmd.aliases.forEach((alias) => {
-                    commands.set(alias, cmd);
-                });
+                if (withAliases) {
+                    cmd.aliases.forEach((alias) => {
+                        commands.set(alias, cmd);
+                    });
+                }
             } else {
                 logger.warn(`File at ${filePath} is not and instance of Command.`);
             }

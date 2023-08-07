@@ -10,7 +10,7 @@ import {
 } from "@discordjs/voice";
 
 import Song from "./song.js";
-import {Result, ResultAsync, err, errAsync, ok} from "neverthrow";
+import {Result, ResultAsync, err, errAsync, ok, okAsync} from "neverthrow";
 import {QueueSong} from "./queueSong.js";
 import {QueueError} from "./queueError.js";
 import Playlist from "./playlist.js";
@@ -26,6 +26,7 @@ export class Queue {
   private readonly maxHistory: number;
 
   private songs: Song[];
+  private history: Song[];
   private player: AudioPlayer;
   private doAutoplay: boolean;
   private doLoop: boolean;
@@ -37,14 +38,12 @@ export class Queue {
     this.maxHistory = maxHistory ?? 10;
 
     this.songs = [];
+    this.history = [];
     this.player = createAudioPlayer();
     this.doAutoplay = false;
     this.doLoop = false;
     this.relatedSong = undefined;
     this.currentSong = undefined;
-
-    // TODO remove this
-    logger.info(this.maxHistory);
 
     this.player.on(AudioPlayerStatus.Idle, async () => {
       try {
@@ -76,6 +75,14 @@ export class Queue {
 
   get queue(): Song[] {
     return this.songs;
+  }
+
+  get histSize(): number {
+    return this.history.length;
+  }
+
+  get hist(): Song[] {
+    return this.history;
   }
 
   autoplay(): void {
@@ -143,7 +150,7 @@ export class Queue {
     return ok(toIdx + 1);
   }
 
-  remove(from: number) : Result<Song, Error> {
+  remove(from: number): Result<Song, Error> {
     const fromIdx = from - 1;
     if (fromIdx >= this.songs.length || fromIdx < 0) {
       return err(Error(QueueError.InvalidMove));
@@ -152,30 +159,37 @@ export class Queue {
     return ok(this.songs.splice(fromIdx, 1)[0]);
   }
 
-  shuffle() : void {
+  shuffle(): void {
     // Fisher–Yates shuffle algorithm
     // https://blog.codinghorror.com/the-danger-of-naivete/
     for (let i = this.songs.length - 1; i > 0; --i) {
-        const n = Math.floor(Math.random() * (i + 1));
-        const tmp = this.songs[i];
-        this.songs[i] = this.songs[n];
-        this.songs[n] = tmp;
+      const n = Math.floor(Math.random() * (i + 1));
+      const tmp = this.songs[i];
+      this.songs[i] = this.songs[n];
+      this.songs[n] = tmp;
     }
   }
 
-  async next(): Promise<void> {
-    if (!this.doLoop) {
-      this.currentSong = undefined;
+  async next(forceSkip: boolean = false): Promise<void> {
+    if (this.currentSong) {
+      // save history
+      if (this.history.length >= this.maxHistory) {
+        this.history.splice(0, 1);
+      }
+      this.history.push(this.currentSong.toSong());
+
+      // loop if wanted/needed
+      if (this.doLoop && !forceSkip) {
+        this.songs.splice(0, 0, this.currentSong.toSong());
+      }
     }
+
+    this.currentSong = undefined;
     await this.process();
   }
 
   async skip(): Promise<void> {
-    if (this.doLoop) {
-      // force a skip
-      this.currentSong = undefined;
-    }
-    return this.next();
+    return this.next(true);
   }
 
   private query2Song(arg: string): ResultAsync<Song, Error> {
@@ -195,11 +209,21 @@ export class Queue {
     });
   }
 
-  replay(): ResultAsync<Song, Error> {
-    if (!this.currentSong) {
-      return errAsync(new Error(QueueError.NoSongPlaying));
+  back(): ResultAsync<Song, Error> {
+    if (this.history.length > 0) {
+      const song = this.history.pop()!;
+      return this.play(song.url);
     }
-    return this.play(this.currentSong.url);
+    return errAsync(new Error(QueueError.NoSongPlaying));
+  }
+
+  replay(): ResultAsync<Song, Error> {
+    if (this.currentSong) {
+      const song = this.currentSong.toSong();
+      this.songs.splice(0, 0, song);
+      return okAsync(song);
+    }
+    return this.back();
   }
 
   playskip(arg: string): ResultAsync<Song, Error> {

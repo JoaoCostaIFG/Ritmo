@@ -5,7 +5,7 @@ import {loadCommands} from './discord_utils/loader';
 import {logger} from './utils/logger';
 
 async function main() {
-  const cmdsRes = loadCommands(path.join(__dirname, "commands"));
+  const cmdsRes = loadCommands(path.join(__dirname, "commands"), false);
   if (cmdsRes.isErr()) {
     logger.error(cmdsRes.error);
     return;

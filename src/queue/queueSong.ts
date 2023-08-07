@@ -2,11 +2,11 @@ import {
   createAudioResource,
   StreamType, AudioPlayer, AudioResource
 } from "@discordjs/voice";
-import { stream } from "play-dl";
-import Song, { SongArgs } from "./song.js";
-import { secs2TimeStr } from "../utils/time.js";
-import { ResultAsync } from "neverthrow";
-import { QueueError } from "./queueError.js";
+import {stream} from "play-dl";
+import Song, {SongArgs} from "./song.js";
+import {secs2TimeStr} from "../utils/time.js";
+import {ResultAsync} from "neverthrow";
+import {QueueError} from "./queueError.js";
 
 export interface QueueSongArgs extends SongArgs {
   startTime: number;
@@ -17,8 +17,8 @@ export class QueueSong extends Song {
   private startTime: number;
   private resource: AudioResource<null>;
 
-  private constructor({ title, author, duration, url, relatedUrl, thumbnail, startTime, resource }: QueueSongArgs) {
-    super({ title, author, duration, url, relatedUrl, thumbnail });
+  private constructor({title, author, duration, url, relatedUrl, thumbnail, startTime, resource}: QueueSongArgs) {
+    super({title, author, duration, url, relatedUrl, thumbnail});
     this.startTime = startTime;
     this.resource = resource;
   }
@@ -56,8 +56,19 @@ export class QueueSong extends Song {
     return this.seek(player, 0);
   }
 
+  public toSong(): Song {
+    return new Song({
+      title: this.title,
+      author: this.author,
+      duration: this.duration,
+      url: this.url,
+      relatedUrl: this.relatedUrl,
+      thumbnail: this.thumbnail,
+    });
+  }
+
   private static makeResource(url: string, seek?: number): ResultAsync<AudioResource<null>, Error> {
-    return ResultAsync.fromPromise(stream(url, { seek: seek }), () => new Error(QueueError.StreamFail))
+    return ResultAsync.fromPromise(stream(url, {seek: seek}), () => new Error(QueueError.StreamFail))
       .map(songStream => createAudioResource(songStream.stream, {
         inputType: StreamType.Opus,
       }));
