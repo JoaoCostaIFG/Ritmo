@@ -257,23 +257,26 @@ export class Queue {
       selfDeaf: true,
       selfMute: false,
     });
-    connection.on(VoiceConnectionStatus.Disconnected, async (_oldState, _newState) => {
-      try {
-        await Promise.race([
-          entersState(connection, VoiceConnectionStatus.Signalling, 2_000),
-          entersState(connection, VoiceConnectionStatus.Connecting, 2_000),
-        ]);
-        // Seems to be reconnecting to a new channel - ignore disconnect
-      } catch (_error) {
-        // Seems to be a real disconnect which SHOULDN'T be recovered from
-        this.stop();
+    if (connection.listeners(VoiceConnectionStatus.Disconnected).length === 0) {
+      // prevent memory leak thing
+      connection.on(VoiceConnectionStatus.Disconnected, async (_oldState, _newState) => {
         try {
-          connection.destroy();
+          await Promise.race([
+            entersState(connection, VoiceConnectionStatus.Signalling, 2_000),
+            entersState(connection, VoiceConnectionStatus.Connecting, 2_000),
+          ]);
+          // Seems to be reconnecting to a new channel - ignore disconnect
         } catch (_error) {
-          // ignored
+          // Seems to be a real disconnect which SHOULDN'T be recovered from
+          this.stop();
+          try {
+            connection.destroy();
+          } catch (_error) {
+            // ignored
+          }
         }
-      }
-    });
+      });
+    }
 
     return ResultAsync.fromPromise(
       entersState(connection, VoiceConnectionStatus.Ready, 3_000),

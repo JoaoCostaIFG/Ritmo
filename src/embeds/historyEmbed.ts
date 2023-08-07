@@ -3,7 +3,8 @@ import {Queue} from '../queue/queue';
 
 export function historyEmbed(queue: Queue, page: number = 0): EmbedBuilder {
   const hist = Array.from(queue.hist).reverse();
-  const pageStart = Math.min(hist.length - 10, page - (page % 10));
+  let pageStart = Math.min(hist.length - 10, page * 10);
+  if (pageStart < 0) pageStart = 0;
   const embed = new EmbedBuilder()
     .setColor(0x0099FF)
     .setTitle("Songs in history")
