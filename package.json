@@ -4,6 +4,7 @@
   "description": "",
   "main": "src/index.ts",
   "scripts": {
+    "build": "tsc",
     "start": "tsc && node dist/index.js",
     "debug": "tsc && node --trace-warnings dist/index.js",
     "deploy": "tsc && node dist/deploy-commands.js",
