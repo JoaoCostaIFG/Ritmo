@@ -1,4 +1,6 @@
-import 'dotenv/config'
+import * as dotenv from 'dotenv';
+dotenv.config({path: process.env.RITMO_ENV ?? process.cwd() + '/.env' });
+
 import path from 'path';
 import Command from './discord_utils/command';
 import {loadCommands} from './discord_utils/loader';
