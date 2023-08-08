@@ -1,6 +1,10 @@
 dist/
 node_modules/
 .env
+.eslintrc.js
+.tsbuildinfo
+.dockerignore
+Dockerfile
 .gitignore
 .git
 README.md
