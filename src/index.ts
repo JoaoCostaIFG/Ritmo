@@ -1,5 +1,5 @@
 import * as dotenv from 'dotenv';
-dotenv.config({path: process.env.RITMO_ENV ?? process.cwd() + '/.env' });
+dotenv.config({path: process.env.RITMO_ENV ?? process.cwd() + '/.env'});
 
 import {generateDependencyReport} from '@discordjs/voice';
 import {Client, GatewayIntentBits} from 'discord.js';
@@ -26,7 +26,7 @@ async function main() {
     }
     client.commands = cmdsRes.value;
     await registerEvents(client, path.join(__dirname, "events"));
-    client.songQueue = new Queue({});
+    client.songQueue = new Queue({client: client});
 
     client.login(process.env.TOKEN);
 }

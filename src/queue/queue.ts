@@ -1,4 +1,4 @@
-import {VoiceBasedChannel} from "discord.js";
+import {ActivityType, Client, VoiceBasedChannel} from "discord.js";
 import {
   createAudioPlayer,
   joinVoiceChannel,
@@ -17,11 +17,13 @@ import Playlist from "./playlist.js";
 import {logger} from "../utils/logger.js";
 
 interface QueueArgs {
+  client: Client;
   maxSize?: number;
   maxHistory?: number;
 }
 
 export class Queue {
+  private readonly client: Client;
   private readonly maxSize: number;
   private readonly maxHistory: number;
 
@@ -33,9 +35,10 @@ export class Queue {
   private relatedSong: string | undefined;
   private currentSong: QueueSong | undefined;
 
-  constructor({maxSize, maxHistory}: QueueArgs) {
-    this.maxSize = maxSize ?? 100;
-    this.maxHistory = maxHistory ?? 10;
+  constructor({client, maxSize = 100, maxHistory = 10}: QueueArgs) {
+    this.client = client;
+    this.maxSize = maxSize;
+    this.maxHistory = maxHistory;
 
     this.songs = [];
     this.history = [];
@@ -56,6 +59,17 @@ export class Queue {
     this.player.on('error', error => {
       logger.error(`The player found an error: [error=${error}]`);
     });
+  }
+
+  private clearCurrentSong(): void {
+    this.currentSong = undefined;
+    this.client.user?.setActivity();
+  }
+
+  private setCurrentSong(song: QueueSong): void {
+    this.currentSong = song;
+    this.currentSong.play(this.player);
+    this.client.user?.setActivity(song.title, { type: ActivityType.Listening });
   }
 
   hasSong(): boolean {
@@ -116,7 +130,7 @@ export class Queue {
 
   stop(): void {
     this.songs = [];
-    this.currentSong = undefined;
+    this.clearCurrentSong();
     this.relatedSong = undefined;
     this.player.stop();
   }
@@ -184,7 +198,7 @@ export class Queue {
       }
     }
 
-    this.currentSong = undefined;
+    this.clearCurrentSong();
     await this.process();
   }
 
@@ -326,7 +340,6 @@ export class Queue {
       logger.error(queueSongRes.error.message);
       return;
     }
-    this.currentSong = queueSongRes.value;
-    this.currentSong.play(this.player);
+    this.setCurrentSong(queueSongRes.value)
   }
 }
