@@ -69,7 +69,7 @@ export class Queue {
   private setCurrentSong(song: QueueSong): void {
     this.currentSong = song;
     this.currentSong.play(this.player);
-    this.client.user?.setActivity(song.title, { type: ActivityType.Listening });
+    this.client.user?.setActivity({name: song.title, type: ActivityType.Listening, url: song.url});
   }
 
   hasSong(): boolean {
