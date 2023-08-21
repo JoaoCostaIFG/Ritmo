@@ -9,6 +9,7 @@
     "debug": "tsc && node --trace-warnings dist/index.js",
     "deploy": "tsc && node dist/deploy-commands.js",
     "deploy-global": "tsc && node dist/deploy-commands-global.js",
+    "help": "tsc && node dist/list-commands.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",

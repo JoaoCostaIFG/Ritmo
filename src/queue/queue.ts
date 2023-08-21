@@ -1,4 +1,4 @@
-import {ActivityType, Client, VoiceBasedChannel} from "discord.js";
+import { ActivityType, Client, VoiceBasedChannel } from "discord.js";
 import {
   createAudioPlayer,
   joinVoiceChannel,
@@ -10,11 +10,11 @@ import {
 } from "@discordjs/voice";
 
 import Song from "./song.js";
-import {Result, ResultAsync, err, errAsync, ok, okAsync} from "neverthrow";
-import {QueueSong} from "./queueSong.js";
-import {QueueError} from "./queueError.js";
+import { Result, ResultAsync, err, errAsync, ok, okAsync } from "neverthrow";
+import { QueueSong } from "./queueSong.js";
+import { QueueError } from "./queueError.js";
 import Playlist from "./playlist.js";
-import {logger} from "../utils/logger.js";
+import { logger } from "../utils/logger.js";
 
 interface QueueArgs {
   client: Client;
@@ -35,7 +35,7 @@ export class Queue {
   private relatedSong: string | undefined;
   private currentSong: QueueSong | undefined;
 
-  constructor({client, maxSize = 100, maxHistory = 10}: QueueArgs) {
+  constructor({ client, maxSize = 100, maxHistory = 10 }: QueueArgs) {
     this.client = client;
     this.maxSize = maxSize;
     this.maxHistory = maxHistory;
@@ -52,11 +52,13 @@ export class Queue {
       try {
         await this.next();
       } catch (error) {
-        logger.error(`The player is idle and we got an error while getting to the next song: [error=${error}]`);
+        logger.error(
+          `The player is idle and we got an error while getting to the next song: [error=${error}]`,
+        );
       }
     });
 
-    this.player.on('error', error => {
+    this.player.on("error", (error) => {
       logger.error(`The player found an error: [error=${error}]`);
     });
   }
@@ -69,7 +71,11 @@ export class Queue {
   private setCurrentSong(song: QueueSong): void {
     this.currentSong = song;
     this.currentSong.play(this.player);
-    this.client.user?.setActivity({name: song.title, type: ActivityType.Listening, url: song.url});
+    this.client.user?.setActivity({
+      name: song.title,
+      type: ActivityType.Listening,
+      url: song.url,
+    });
   }
 
   hasSong(): boolean {
@@ -145,15 +151,15 @@ export class Queue {
     return this.currentSong.seek(this.player, seconds);
   }
 
-  move(from: number): Result<number, Error>
-  move(from: number, to: number | undefined): Result<number, Error>
+  move(from: number): Result<number, Error>;
+  move(from: number, to: number | undefined): Result<number, Error>;
   move(from: number, to?: number | undefined): Result<number, Error> {
     const fromIdx = from - 1;
     if (fromIdx >= this.songs.length || fromIdx < 0) {
       return err(Error(QueueError.InvalidMove));
     }
 
-    const toIdx = (to === undefined) ? 0 : to - 1;
+    const toIdx = to === undefined ? 0 : to - 1;
     if (toIdx >= this.songs.length || toIdx < 0) {
       return err(Error(QueueError.InvalidMove));
     }
@@ -211,11 +217,11 @@ export class Queue {
       return errAsync(new Error(QueueError.QueueMaxSize));
     }
 
-    return (arg.startsWith("https")) ? Song.fromUrl(arg) : Song.fromQuery(arg);
+    return arg.startsWith("https") ? Song.fromUrl(arg) : Song.fromQuery(arg);
   }
 
   play(arg: string): ResultAsync<Song, Error> {
-    return this.query2Song(arg).map(song => {
+    return this.query2Song(arg).map((song) => {
       this.songs.push(song);
       // play if there is nothing playing
       this.process();
@@ -241,7 +247,7 @@ export class Queue {
   }
 
   playskip(arg: string): ResultAsync<Song, Error> {
-    return this.query2Song(arg).map(song => {
+    return this.query2Song(arg).map((song) => {
       this.songs.splice(0, 0, song);
       // play if there is nothing playing
       this.skip();
@@ -254,13 +260,14 @@ export class Queue {
       return errAsync(new Error(QueueError.QueueMaxSize));
     }
 
-    return Playlist.fromUrl(arg, this.maxSize - this.songs.length)
-      .map(playlist => {
+    return Playlist.fromUrl(arg, this.maxSize - this.songs.length).map(
+      (playlist) => {
         this.songs.push(...playlist.songs);
         // play if there is nothing playing
         this.process();
         return playlist;
-      });
+      },
+    );
   }
 
   join(channel: VoiceBasedChannel): ResultAsync<void, Error> {
@@ -273,30 +280,34 @@ export class Queue {
     });
     if (connection.listeners(VoiceConnectionStatus.Disconnected).length === 0) {
       // prevent memory leak thing
-      connection.on(VoiceConnectionStatus.Disconnected, async (_oldState, _newState) => {
-        try {
-          await Promise.race([
-            entersState(connection, VoiceConnectionStatus.Signalling, 2_000),
-            entersState(connection, VoiceConnectionStatus.Connecting, 2_000),
-          ]);
-          // Seems to be reconnecting to a new channel - ignore disconnect
-        } catch (_error) {
-          // Seems to be a real disconnect which SHOULDN'T be recovered from
-          this.stop();
+      connection.on(
+        VoiceConnectionStatus.Disconnected,
+        async (_oldState, _newState) => {
           try {
-            connection.destroy();
+            await Promise.race([
+              entersState(connection, VoiceConnectionStatus.Signalling, 2_000),
+              entersState(connection, VoiceConnectionStatus.Connecting, 2_000),
+            ]);
+            // Seems to be reconnecting to a new channel - ignore disconnect
           } catch (_error) {
-            // ignored
+            // Seems to be a real disconnect which SHOULDN'T be recovered from
+            this.stop();
+            try {
+              connection.destroy();
+            } catch (_error) {
+              // ignored
+            }
           }
-        }
-      });
+        },
+      );
     }
 
     return ResultAsync.fromPromise(
       entersState(connection, VoiceConnectionStatus.Ready, 3_000),
       () => new Error(QueueError.ConnectionFailed),
-    )
-      .map(() => {connection.subscribe(this.player);});
+    ).map(() => {
+      connection.subscribe(this.player);
+    });
   }
 
   disconnect(channel: VoiceBasedChannel): Result<void, Error> {
@@ -340,6 +351,6 @@ export class Queue {
       logger.error(queueSongRes.error.message);
       return;
     }
-    this.setCurrentSong(queueSongRes.value)
+    this.setCurrentSong(queueSongRes.value);
   }
 }
