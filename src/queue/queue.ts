@@ -217,7 +217,7 @@ export class Queue {
       return errAsync(new Error(QueueError.QueueMaxSize));
     }
 
-    return arg.startsWith("https") ? Song.fromUrl(arg) : Song.fromQuery(arg);
+    return arg.startsWith("https://") ? Song.fromUrl(arg) : Song.fromQuery(arg);
   }
 
   play(arg: string): ResultAsync<Song, Error> {
