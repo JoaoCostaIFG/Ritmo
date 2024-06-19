@@ -6,15 +6,6 @@ import Command from "../../discord_utils/command";
 export const cmd = new Command()
   .setName("move")
   .setDescription("Move songs in the queue")
-  .addNumberOption(option => option
-    .setName("from")
-    .setDescription("The index of the song to move")
-    .setRequired(true),
-  )
-  .addNumberOption(option => option
-    .setName("to")
-    .setDescription("The index to move to"),
-  )
   .setExec(async (interaction: ChatInputCommandInteraction) => {
     await interaction.deferReply();
 
@@ -41,4 +32,13 @@ export const cmd = new Command()
         })
       );
   })
+  .addNumberOption(option => option
+    .setName("from")
+    .setDescription("The index of the song to move")
+    .setRequired(true),
+  )
+  .addNumberOption(option => option
+    .setName("to")
+    .setDescription("The index to move to"),
+  )
 

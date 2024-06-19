@@ -8,11 +8,6 @@ export const cmd = new Command()
   .setName("playlist")
   .addAlias("pl")
   .setDescription("Plays a playlist")
-  .addStringOption(option => option
-    .setName("url")
-    .setDescription("The playlist to play")
-    .setRequired(true),
-  )
   .setExec(async (interaction: ChatInputCommandInteraction) => {
     await interaction.deferReply();
 
@@ -46,4 +41,9 @@ export const cmd = new Command()
           ephemeral: true,
         })
       );
-  });
+  })
+  .addStringOption(option => option
+    .setName("url")
+    .setDescription("The playlist to play")
+    .setRequired(true),
+  )
